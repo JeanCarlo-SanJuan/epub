@@ -1,18 +1,21 @@
-# epub [![Build Status](https://travis-ci.org/julien-c/epub.svg?branch=master)](https://travis-ci.org/julien-c/epub)
+# My version achieves the same results but with better readability by leveraging modern JS techniques and features like the following:
+1. Foreach loop
+2. Async functions
+3. Promises.
 
-**epub** is a node.js module to parse EPUB electronic book files.
+# Dependency change:
+1. adm-zip | zipfile -> @zip.js/zip.js
+2. xml2js -> xml-js
+
+Note: I didn't need to change dependencies but my lack of knowledge of handling node packages caused me to do so (I'll explain in the future). 
+I only realized my mistake when I was finished rewriting it so of course I will not do so again just to use the same libraries.
+
 
 **NB!** Only ebooks in UTF-8 are currently supported!.
 
-## Installation
+# TODO: Upload to NPM
 
-    npm install epub
-
-Or, if you want a pure-JS version (useful if used in a Node-Webkit app for example):
-
-    npm install epub --no-optional
-
-
+# WARNING: OUTDATED DOCUMENTATION #
 ## Usage
 
 ```js

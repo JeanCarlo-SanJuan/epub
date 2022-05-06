@@ -1,59 +1,18 @@
 {
-  "name": "epub",
-  "description": "Parse ePub electronic book files with Node.JS",
-  "version": "1.2.1",
-  "author": "Andris Reinman",
-  "contributors": [
-    {
-      "name": "andris",
-      "email": "andris@node.ee"
-    },
-    {
-      "name": "Julien Chaumond",
-      "email": "chaumond@gmail.com",
-      "url": "https://github.com/julien-c"
-    }
-  ],
-  "homepage": "http://github.com/julien-c/epub",
-  "repository": {
-    "type": "git",
-    "url": "http://github.com/julien-c/epub.git"
-  },
-  "files": [
-    "epub.js",
-    "epub.d.ts"
-  ],
-  "main": "./epub",
-  "typings": "./epub.d.ts",
-  "licenses": [
-    {
-      "type": "MIT",
-      "url": "http://github.com/julien-c/epub/blob/master/LICENSE"
-    }
-  ],
-  "engine": [
-    "node >=0.3.0"
-  ],
-  "keywords": [
-    "epub",
-    "books"
-  ],
-  "dependencies": {
-    "adm-zip": "^0.4.11",
-    "xml2js": "^0.4.23"
-  },
-  "optionalDependencies": {
-    "zipfile": "^0.5.11"
-  },
-  "devDependencies": {
-    "@types/mocha": "^5.2.5",
-    "@types/node": "^10.11.7",
-    "mocha": "^5.2.0",
-    "p-event": "^4",
-    "typescript": "3.6.4"
-  },
+  "name": "index",
+  "version": "1.0.0",
+  "description": "",
+  "main": "first.js",
+  "type": "module",
   "scripts": {
-    "pretest": "tsc",
-    "test": "mocha dist/test/ --exit"
+    "run" : "node ./first.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "Jean Carlo M. San Juan",
+  "dependencies": {
+    "@zip.js/zip.js": "^2.4.10",
+    "events": "^3.3.0",
+    "xml-js": "^1.6.11"
   }
 }
