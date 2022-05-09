@@ -1,13 +1,9 @@
 {
-  "name": "index",
+  "name": "epub",
   "version": "1.0.0",
-  "description": "",
-  "main": "first.js",
+  "description": "An Epub parser for the web.",
+  "main": "epub.js",
   "type": "module",
-  "scripts": {
-    "run" : "node ./first.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
   "keywords": [],
   "author": "Jean Carlo M. San Juan",
   "dependencies": {
