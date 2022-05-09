@@ -16,7 +16,7 @@ I only realized my mistake when I was finished rewriting it so of course I will 
 ## Usage
 
 ```js
-import Epub from 'epub'
+import Epub from '@jcsj/epub'
 const epub = new Epub(file)
 ```
 
