@@ -183,30 +183,23 @@ class Epub extends EventEmitter {
 
     /**
      * 
-     * @param {Object} rootXML 
-     * @param {Object} rootXML.package.manifest
-     * @param {Object} rootXML.package.metadata
-     * @param {Object} rootXML.package.spine
-     * @param {Object} rootXML.package._attributes
+     * @param {Object} package
+     * @param {Object} package.manifest
+     * @param {Object} package.metadata
+     * @param {Object} package.spine
+     * @param {Object} package._attributes
      */
-    async parseRootFile(rootXML) {
-        const { 
-            "manifest": manifest, 
-            "metadata": metadata, 
-            "spine": spine, 
-            "_attributes":attr
-        } = rootXML.package
-        this.version = attr.version || '2.0';
-        this.parseMetadata(metadata)
-        this.parseManifest(manifest)
-        this.parseSpine(spine)
+    async parseRootFile({package:pkg}) {
+        this.version = pkg._attributes.version || '2.0';
+        this.parseMetadata(pkg.metadata)
+        this.parseManifest(pkg.manifest)
+        this.parseSpine(pkg.spine)
         this.parseTOC().then(() => {
             this.emit("loaded")
         })
     }
 
     /**
-     * 
      * @param {Array} manifest 
      */
     parseManifest(manifest) {
@@ -524,10 +517,9 @@ class Epub extends EventEmitter {
         for (const img of frag.querySelectorAll("img")) {
             const src = this.rootPath.alter(img.src || img.dataset.src)
             img.src = ""
-            for(const elem of Object.values(this.manifest)) {
-                //The data-src will be used as the arg of the Epub.getImage()
-                if (elem.href == src) {
-                    img.dataset.src = elem.id
+            for(const {id, href} of Object.values(this.manifest)) {
+                if (href == src) {
+                    img.src = await this.getImage(id)
                 }
             }
         }
