@@ -1,5 +1,5 @@
 {
-  "name": "epub",
+  "name": "@jcsj/epub",
   "version": "1.0.0",
   "description": "An Epub parser for the web.",
   "main": "epub.js",
