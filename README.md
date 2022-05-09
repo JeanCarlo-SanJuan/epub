@@ -13,8 +13,6 @@ I only realized my mistake when I was finished rewriting it so of course I will 
 
 **NB!** Only ebooks in UTF-8 are currently supported!.
 
-# TODO: Upload to NPM
-
 ## Usage
 
 ```js
