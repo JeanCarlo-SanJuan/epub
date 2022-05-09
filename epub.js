@@ -95,7 +95,7 @@ class Epub extends EventEmitter {
      * @param {String} writer 
      * @returns {Promise<{Object, Object}>
      */
-    async readEntryWithName(name, writer = "text") {
+    async getFileContents(name, writer = "text") {
         const f = this.getFileInArchive(name)
         const w = this.determineWriter(writer)
         return {file:f, data: await f.getData(w)}
@@ -105,7 +105,7 @@ class Epub extends EventEmitter {
      *  are "application/epub+zip". On success, runs root file check.
      **/
     async checkMimeType() {
-        const {"file": mimeFile, "data":txt} = await this.readEntryWithName("mimetype")
+        const {"file": mimeFile, "data":txt} = await this.getFileContents("mimetype")
         this.file.mime = mimeFile;
         if (txt != "application/epub+zip") {
             this.error("Unsupported mime type");
@@ -121,7 +121,7 @@ class Epub extends EventEmitter {
      *  On success, calls the rootfile parser
      **/
     async getRootFiles() {
-        this.file.container = await this.readEntryWithName("meta-inf/container.xml")
+        this.file.container = await this.getFileContents("meta-inf/container.xml")
         
         const {data} = this.file.container
         const {container} = this.xml2js(data.toString("utf-8").toLowerCase().trim())
@@ -175,7 +175,7 @@ class Epub extends EventEmitter {
         return convert.xml2js(data, {compact: true, spaces: 4})
     }
     async handleRootFile() {
-        const {data} = await this.readEntryWithName(this.file.rootName)
+        const {data} = await this.getFileContents(this.file.rootName)
         const xml = this.xml2js(data)
         this.rootXML = xml
         this.emit("parsed-root")
@@ -322,7 +322,7 @@ class Epub extends EventEmitter {
         for (const [k, v] of Object.entries(this.manifest)) {
             IDs[v.href] = k
         }
-        const {data} = await this.readEntryWithName(tocElem.href)
+        const {data} = await this.getFileContents(tocElem.href)
         if(!data) {
             this.emit("No TOC!!!")
         }
@@ -385,7 +385,7 @@ class Epub extends EventEmitter {
             for (const [k, v] of Object.entries(this.manifest)) {
                 IDs[v.href] = k
             }
-            const {file, data} = await this.readEntryWithName(tocElem.href)
+            const {file, data} = await this.getFileContents(tocElem.href)
             if(!data) {
                 this.emit("No TOC!!!")
             }
@@ -545,7 +545,7 @@ class Epub extends EventEmitter {
             this.error("Invalid mime type for chapter")
         }
 
-        return (await this.readEntryWithName(elem.href)).data;
+        return (await this.getFileContents(elem.href)).data;
     }
 
 
@@ -572,7 +572,7 @@ class Epub extends EventEmitter {
             return "";
         }
 
-        const {"data": b} = await this.readEntryWithName(this.manifest[id].href, "blob")
+        const {"data": b} = await this.getFileContents(this.manifest[id].href, "blob")
 
         const r = new FileReader();
         return new Promise((resolve, reject) => {
