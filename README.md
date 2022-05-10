@@ -54,7 +54,7 @@ epub.metadata
 
 Available fields:
 
-  * **creator** Author of the book (if multiple authors, then the first on the list) (*Lewis Carroll*)
+  * **creator** Author of the book (if multiple authors, will be seperated with '|') (*Lewis Carroll*)
   * **creatorFileAs** Author name on file (*Carroll, Lewis*)
   * **title** Title of the book (*Alice's Adventures in Wonderland*)
   * **language** Language code (*en* or *en-us* etc.)
@@ -72,7 +72,7 @@ epub.flow.forEach(chapter => {
 })
 ```
 
-Chapter `id` is needed to load the chapters `getContent`
+Chapter `id` is needed to load the chapters with `getContent`
 
 ## toc
 *toc* is a property of the *epub* object and indicates a list of titles/urls for the TOC. Actual chapter and it's ID needs to be detected with the `href` property
@@ -81,7 +81,7 @@ Chapter `id` is needed to load the chapters `getContent`
 
 <details>
 <summary>
-Loads chapter text from the ebook and alters it. Additionally, the result is cached the first an ID is encountered.
+Loads chapter text from the ebook and alters it. Additionally, the result is cached when an ID is first encountered.
 </summary>
 1. Keeps only body
 1. Removes scripts, styles, and event handlers
