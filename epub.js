@@ -312,7 +312,9 @@ class Epub extends EventEmitter {
      */
     async parseTOC() {
         const hasNCX = Boolean(this.spine.toc)
-        let tocElem;
+        let toc, tocElem;
+
+        console.log("has NCX:", hasNCX);
 
         tocElem = (hasNCX) ? 
             this.manifest[this.spine.toc]
@@ -331,28 +333,52 @@ class Epub extends EventEmitter {
         if (hasNCX) {
             const path = tocElem.href.split("/")
             path.pop();
-            this.toc = this.walkNavMap({
+            toc = this.walkNavMap({
                 "branch": xml.ncx.navMap.navPoint,
                 "path" : path, 
                 "IDs": IDs
             })
         } else {
-            this.walkTOC(xml)
+            toc = this.walkTOC(xml.html.body)
         }
+
+        this.toc = this.matchTOCWithManifest(toc);
         this.emit("parsed-toc")
     }
 
+    matchTOCWithManifest(toc) {
+        for (const elem of toc) {
+            delete elem.mediaType;
+            elem["media-type"] = undefined;
+
+            if (elem.href.includes(elem.id)) {
+                continue                                                                            
+            }
+
+            let href;
+            //Remove white space and page jumps
+            if (elem.href.includes("#")) {
+                [href] = elem.href.trim().split("#", 1)
+            }
+
+            for (const key in this.manifest) {
+                if (href == this.manifest[key].href) {
+                    elem.id = key;
+                    break;
+                }
+            }
+        }
+
+        return toc
+    }
     /**
-     * 
-     * @param {convert.CompactElement} xml 
+     * Builds the TOC using the body of the xml from the TOC file. 
+     * @param {Object} body
      */
-    walkTOC(xml) {
-        //Keep only body
-        const {body} = xml.html
-        console.log("TOC body", body);
+    walkTOC(body) {
         let order = 0;
         const IDs = {}
-
+        const toc = []
         for (const p of body.p) {
             let _id = p._attributes.id
             _id = _id.replace(/toc(-|:)/i, "").trim()
@@ -365,37 +391,12 @@ class Epub extends EventEmitter {
             element.title = title;
             element.order = order++;
 
-            this.toc.push(element)
+            toc.push(element)
         }
 
-        console.log("OPF", this.toc);
+        console.log("OPF", toc);
+        return toc;
     }
-
-        /**
-     *  EPub#parseTOCNCX() -> undefined
-     *
-     *  Parses ncx file for table of contents (title, html)
-     **/
-    async parseTOCWithNCX() {
-        const IDs = {},
-                tocElem = this.manifest[this.spine.toc],
-                path = tocElem.href.split("/")
-                
-            path.pop();
-            for (const [k, v] of Object.entries(this.manifest)) {
-                IDs[v.href] = k
-            }
-            const {file, data} = await this.getFileContents(tocElem.href)
-            if(!data) {
-                this.emit("No TOC!!!")
-            }
-            const xml = this.xml2js(data)
-            this.toc = this.walkNavMap({
-                "branch": xml.ncx.navMap.navPoint,
-                "path" : path, 
-                "IDs": IDs
-            })
-        }
 
     /**
      *  Walks the NavMap object through all levels and finds elements
@@ -416,7 +417,11 @@ class Epub extends EventEmitter {
         for (const part of toArray(branch)) {
             let title = "";
             if(part.navLabel) {
-                title = (part.navLabel.text._text || part.navLabel).trim() || ""
+                try {
+                    title = (part.navLabel.text._text || part.navLabel).trim()
+                } catch {
+                    title = "";
+                }
             }
 
             let order = Number(part._attributes.playOrder || 0)
@@ -547,7 +552,6 @@ class Epub extends EventEmitter {
 
         return (await this.getFileContents(elem.href)).data;
     }
-
 
     /**
      *  Return only images with mime type image
