@@ -65,7 +65,9 @@ class Epub extends EventEmitter {
      */
     getFileInArchive(name) {
         for (const entry of this.entries) {
-            if (entry.filename.toLowerCase() == name.toLowerCase()) {
+
+            //Allow partial matches
+            if (name.toLowerCase().includes(entry.filename.toLowerCase())) {
                 return entry;
             }
         }
@@ -240,10 +242,13 @@ class Epub extends EventEmitter {
      * Helper function for parsing metadata
      */
     extractUUID(txt) {
-        txt = txt.toLowerCase()
-        let parts = txt.split(":")
-        if (parts.includes("uuid")) {
-            return parts[parts.length - 1];
+
+        if (txt) {
+            txt = txt.toLowerCase()
+            let parts = txt.split(":")
+            if (parts.includes("uuid")) {
+                return parts[parts.length - 1];
+            }
         }
     
         return ""
@@ -333,6 +338,7 @@ class Epub extends EventEmitter {
         if (hasNCX) {
             const path = tocElem.href.split("/")
             path.pop();
+            console.log("NCX", xml.ncx.navMap.navPoint);
             toc = this.walkNavMap({
                 "branch": xml.ncx.navMap.navPoint,
                 "path" : path, 
@@ -413,13 +419,14 @@ class Epub extends EventEmitter {
 
         const output = [];
         for (const part of toArray(branch)) {
+            
+            if (!part)
+                continue
+
             let title = "";
-            if(part.navLabel) {
-                try {
-                    title = (part.navLabel.text._text || part.navLabel).trim()
-                } catch {
-                    title = "";
-                }
+                
+            if (part.navLabel) {
+                title = (part.navLabel.text._text || part.navLabel).trim()
             }
 
             let order = Number(part._attributes.playOrder || 0)
