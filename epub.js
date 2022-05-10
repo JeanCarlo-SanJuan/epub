@@ -243,7 +243,7 @@ class Epub extends EventEmitter {
      */
     extractUUID(txt) {
 
-        if (txt) {
+        if (typeof txt == "string") {
             txt = txt.toLowerCase()
             let parts = txt.split(":")
             if (parts.includes("uuid")) {
@@ -338,7 +338,6 @@ class Epub extends EventEmitter {
         if (hasNCX) {
             const path = tocElem.href.split("/")
             path.pop();
-            console.log("NCX", xml.ncx.navMap.navPoint);
             toc = this.walkNavMap({
                 "branch": xml.ncx.navMap.navPoint,
                 "path" : path, 
