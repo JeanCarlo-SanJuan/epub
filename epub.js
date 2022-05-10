@@ -348,8 +348,6 @@ class Epub extends EventEmitter {
 
     matchTOCWithManifest(toc) {
         for (const elem of toc) {
-            delete elem.mediaType;
-            elem["media-type"] = undefined;
 
             if (elem.href.includes(elem.id)) {
                 continue                                                                            
