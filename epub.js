@@ -66,8 +66,12 @@ class Epub extends EventEmitter {
     getFileInArchive(name) {
         for (const entry of this.entries) {
 
+            //Remove leading / for paths
+            if (name[0] == "/")
+                name = name.slice(1)
+
             //Allow partial matches
-            if (name.toLowerCase().includes(entry.filename.toLowerCase())) {
+            if (entry.filename.toLowerCase().includes(name.toLowerCase())) {
                 return entry;
             }
         }
