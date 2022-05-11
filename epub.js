@@ -1,7 +1,7 @@
 import EventEmitter from "events"
 import * as zip from "@zip.js/zip.js"
 import convert from "xml-js";
-import toArray from "./test-toArray.js"
+import toArray from "./toArray.js"
 
 class Epub extends EventEmitter {
     constructor(file) {
