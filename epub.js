@@ -1,7 +1,7 @@
 import EventEmitter from "events"
 import * as zip from "@zip.js/zip.js"
 import convert from "xml-js";
-import toArray from "./toArray.js"
+import toArray from "./test-toArray.js"
 
 class Epub extends EventEmitter {
     constructor(file) {
@@ -65,13 +65,17 @@ class Epub extends EventEmitter {
      */
     getFileInArchive(name) {
         for (const entry of this.entries) {
+            if (entry.directory)
+                continue
 
             //Remove leading / for paths
             if (name[0] == "/")
                 name = name.slice(1)
 
             //Allow partial matches
-            if (entry.filename.toLowerCase().includes(name.toLowerCase())) {
+            const eFN = entry.filename.toLowerCase();
+            const fn = name.toLowerCase();
+            if (eFN.includes(fn) || fn.includes(eFN)) {
                 return entry;
             }
         }
@@ -448,27 +452,36 @@ class Epub extends EventEmitter {
                 title: title
             };
 
-            if (href) {
-                element.href = path.concat([href]).join("/");
+            if (!href)
+                continue
 
-                if (IDs[element.href]) {
-                    // link existing object
-                    element = this.manifest[IDs[element.href]];
-                    element.title = title;
-                    element.order = order;
-                    element.level = level;
+            element.href = path.concat([href]).join("/");
 
-                } else {
-                    // use new one
-                    element.id = (part._attributes.id || "").trim();
-                }
-
-                output.push(element);
+            if(IDs[element.href]) {
+                // link existing object
+                element = this.manifest[IDs[element.href]];
+                element.title = title;
+                element.order = order;
+                element.level = level;
+                console.log(part.navPoint);
+                element.navPoint = (part.navPoint) ?
+                    this.walkNavMap({
+                        "branch": part.navPoint,
+                        "path" : path, 
+                        "IDs": IDs,
+                        "level": level + 1
+                    })
+                    : false;
+            } else {
+                // use new one
+                element.id = (part._attributes.id || "").trim();
             }
 
+            output.push(element);
+            /* 
             if (part.navPoint) {
                 output.push(...this.walkNavMap(part.navPoint, path, IDs, level + 1));
-            }
+            } */
         }
 
         return output;
