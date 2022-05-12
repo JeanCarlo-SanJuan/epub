@@ -1,14 +1,16 @@
 {
   "name": "@jcsj/epub",
-  "version": "1.0.31",
+  "version": "1.0.32",
   "description": "An Epub parser for the web.",
   "main": "epub.js",
   "type": "module",
   "keywords": [],
   "author": "Jean Carlo M. San Juan",
   "dependencies": {
-    "@zip.js/zip.js": "^2.4.10",
+    "@zip.js/zip.js": "^2.4.11",
     "events": "^3.3.0",
+    "sax": "^1.2.4",
+    "stream": "^0.0.2",
     "xml-js": "^1.6.11"
   },
   "repository": {

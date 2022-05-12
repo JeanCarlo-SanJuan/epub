@@ -1,0 +1,47 @@
+lockfileVersion: 5.4
+
+specifiers:
+  '@zip.js/zip.js': ^2.4.11
+  events: ^3.3.0
+  sax: ^1.2.4
+  stream: ^0.0.2
+  xml-js: ^1.6.11
+
+dependencies:
+  '@zip.js/zip.js': 2.4.11
+  events: 3.3.0
+  sax: 1.2.4
+  stream: 0.0.2
+  xml-js: 1.6.11
+
+packages:
+
+  /@zip.js/zip.js/2.4.11:
+    resolution: {integrity: sha512-foZOFEdy1ZSxUvy4a3k/FlZqFTX7/1Dw7ji/plohTNcDid/XuAtsIWKcANRwZL5JLpSfndtz5M5oAF8oKfwfIw==}
+    dev: false
+
+  /emitter-component/1.1.1:
+    resolution: {integrity: sha1-Bl4tvtaVm/RwZ57avq95gdEAOrY=}
+    dev: false
+
+  /events/3.3.0:
+    resolution: {integrity: sha512-mQw+2fkQbALzQ7V0MY0IqdnXNOeTtP4r0lN9z7AAawCXgqea7bDii20AYrIBrFd/Hx0M2Ocz6S111CaFkUcb0Q==}
+    engines: {node: '>=0.8.x'}
+    dev: false
+
+  /sax/1.2.4:
+    resolution: {integrity: sha512-NqVDv9TpANUjFm0N8uM5GxL36UgKi9/atZw+x7YFnQ8ckwFGKrl4xX4yWtrey3UJm5nP1kUbnYgLopqWNSRhWw==}
+    dev: false
+
+  /stream/0.0.2:
+    resolution: {integrity: sha1-f1Nj8Ff2WSxVlfALyAon9c7B8O8=}
+    dependencies:
+      emitter-component: 1.1.1
+    dev: false
+
+  /xml-js/1.6.11:
+    resolution: {integrity: sha512-7rVi2KMfwfWFl+GpPg6m80IVMWXLRjO+PxTq7V2CDhoGak0wzYzFgUY2m4XJ47OGdXd8eLE8EmwfAmdjw7lC1g==}
+    hasBin: true
+    dependencies:
+      sax: 1.2.4
+    dev: false
