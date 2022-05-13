@@ -2,7 +2,7 @@ import EventEmitter from "events"
 import * as zip from "@zip.js/zip.js"
 import convert from "xml-js";
 import toArray from "./toArray.js"
-
+import simplifyHTMLTree from "./simplifyHTMLTree.js"
 class Epub extends EventEmitter {
     constructor(file) {
         super();
@@ -550,7 +550,10 @@ class Epub extends EventEmitter {
             }
         }
 
-        str = frag.innerHTML
+        //str = frag.innerHTML
+        str = simplifyHTMLTree(frag).innerHTML;
+        //console.log(nf.innerHTML);
+
         this.cache.setText(id, str)
         return str
      }
