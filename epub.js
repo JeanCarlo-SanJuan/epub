@@ -20,7 +20,6 @@ class Epub extends EventEmitter {
         this.manifest = {};
         this.spine = {toc: false, contents: []};
         this.flow = [];
-        this.flowIndex = 0;
         this.toc = [];
 
         this.cache = {
