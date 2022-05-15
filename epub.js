@@ -522,9 +522,7 @@ class Epub extends EventEmitter {
             }
         }
 
-        //str = frag.innerHTML
         str = simplifyHTMLTree(frag).innerHTML;
-        //console.log(nf.innerHTML);
 
         this.cache.setText(id, str)
         return str
