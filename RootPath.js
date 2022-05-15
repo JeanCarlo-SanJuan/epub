@@ -4,9 +4,13 @@ class RootPath {
      * @param {string} fullPath 
      */
     constructor(fullPath) {
+
+        let urlWithotuAnchorsAndParameters = window.location.href.split(/[?#]/)[0];
+        this.url = urlWithotuAnchorsAndParameters;
         this.array = fullPath.split("/");
         this.array.pop()
-        this.str = this.array.join("/") + "/";
+            
+        this.str = (this.array.join("/") + "/");
     }
 
     /**
@@ -16,12 +20,11 @@ class RootPath {
     alter(filepath) {
         filepath = filepath
             .replace("../", "")
-            .replace(window.location.href, "")
+            .replace(this.url, "")
 
         if (filepath.startsWith(this.str)) {
             return filepath
         }
-
         return this.str + filepath
     }
 }

@@ -19,8 +19,8 @@ class Epub extends EventEmitter {
         this.metadata = {};
         this.manifest = {};
         this.spine = {toc: false, contents: []};
-        this.flow = [];
-        this.toc = [];
+        this.flow = new Map();
+        this.toc = new Map();
 
         this.cache = {
             text : {},
@@ -218,7 +218,11 @@ class Epub extends EventEmitter {
                 this.spine.contents.push(element)
             }
         }
-        this.flow = this.spine.contents;
+
+        for (const item of this.spine.contents) {
+            this.flow.set(item.id, item);
+        }
+
         this.emit("parsed-spine")
     }
 
@@ -339,9 +343,9 @@ class Epub extends EventEmitter {
     }
 
     matchTOCWithManifest(toc) {
-        for (const elem of toc) {
+        for (const [id, elem] of toc) {
 
-            if (elem.href.includes(elem.id)) {
+            if (elem.href.includes(id)) {
                 continue                                                                            
             }
 
@@ -368,7 +372,7 @@ class Epub extends EventEmitter {
     walkTOC(body) {
         let order = 0;
         const IDs = {}
-        const toc = []
+        const toc = new Map()
         for (const p of body.p) {
             let _id = p._attributes.id
             _id = _id.replace(/toc(-|:)/i, "").trim()
@@ -381,7 +385,7 @@ class Epub extends EventEmitter {
             element.title = title;
             element.order = order++;
 
-            toc.push(element)
+            toc.set(_id, element)
         }
 
         console.log("OPF", toc);
@@ -395,7 +399,7 @@ class Epub extends EventEmitter {
      * @param {Array | Object} obj.branch
      * @param {Array} obj.path
      * @param {Number} obj.level
-     * @returns {Array}
+     * @returns {Map}
      */
     walkNavMap({branch, path, IDs, level = 0}) {
         // don't go too deep
@@ -403,7 +407,7 @@ class Epub extends EventEmitter {
             return [];
         }
 
-        const output = [];
+        const output = new Map();
         for (const part of toArray(branch)) {
             
             if (!part)
@@ -442,7 +446,6 @@ class Epub extends EventEmitter {
                 element.title = title;
                 element.order = order;
                 element.level = level;
-                console.log(part.navPoint);
                 element.navPoint = (part.navPoint) ?
                     this.walkNavMap({
                         "branch": part.navPoint,
@@ -456,11 +459,7 @@ class Epub extends EventEmitter {
                 element.id = (part._attributes.id || "").trim();
             }
 
-            output.push(element);
-            /* 
-            if (part.navPoint) {
-                output.push(...this.walkNavMap(part.navPoint, path, IDs, level + 1));
-            } */
+            output.set(element.id, element);
         }
 
         return output;
@@ -554,7 +553,7 @@ class Epub extends EventEmitter {
      */
     async getImage(id) {
         if (!this.manifest[id]) {
-            return new Blob()
+            return null
         }
 
         if(this.cache.image[id]) {
