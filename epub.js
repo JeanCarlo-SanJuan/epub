@@ -2,7 +2,9 @@ import EventEmitter from "events"
 import * as zip from "@zip.js/zip.js"
 import convert from "xml-js";
 import toArray from "./toArray.js"
-import simplifyHTMLTree from "./simplifyHTMLTree.js"
+import removeChildsWithTags from "./removeChildsWithTags.js";
+import simplifyHTMLTree from "./simplifyHTMLTree.js";
+import RootPath from "./RootPath.js";
 class Epub extends EventEmitter {
     constructor(file) {
         super();
@@ -149,29 +151,7 @@ class Epub extends EventEmitter {
         }
 
         this.file.rootName = fullPath
-        this.rootPath = {
-            array :fullPath.split("/"),
-            str : "",
-
-            /**
-             * 
-             * @param {String} filepath 
-             * @returns 
-             */
-            alter(filepath) {
-                filepath = filepath
-                    .replace("../", "")
-                    .replace(window.location.href, "")
-
-                if (filepath.startsWith(this.str)) {
-                    return filepath
-                }
-
-                return this.str + filepath
-            }
-        }
-        this.rootPath.array.pop()
-        this.rootPath.str = this.rootPath.array.join("/") + "/"
+        this.rootPath = new RootPath(fullPath);
 
         this.handleRootFile();
     }
@@ -512,15 +492,8 @@ class Epub extends EventEmitter {
 
         const frag = document.createElement("div");
         frag.innerHTML =  str;
-        const removeChildsWith = () => {
-            for(const selector of arguments) {
-                for (const child of frag.querySelectorAll(selector)) {
-                    children.parentNode.removeChild(child)
-                }
-            }
-        }
 
-        removeChildsWith("script", "style")
+        removeChildsWithTags(frag, "script", "style");
         
         const onEvent = /^on.+/i;
 
