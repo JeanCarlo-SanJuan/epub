@@ -503,6 +503,12 @@ class Epub extends EventEmitter {
             }
         }
 
+        //Replaces chapter links with the ids that can be used to refer to them in the TOC
+        for (const a of frag.querySelectorAll("a")) {
+            a.href = a.href.replace(/(t|T)ext\//, "#")
+            console.log(a.href);
+        }
+
         //Replace SVG <image> with <img>
         for (const svg of frag.querySelectorAll("svg")) {
             const image = svg.querySelector("image")
