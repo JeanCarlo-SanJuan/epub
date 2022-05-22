@@ -7,7 +7,7 @@
   "keywords": [],
   "author": "Jean Carlo M. San Juan",
   "dependencies": {
-    "@zip.js/zip.js": "^2.4.11",
+    "@zip.js/zip.js": "^2.4.12",
     "events": "^3.3.0",
     "sax": "^1.2.4",
     "stream": "^0.0.2",
