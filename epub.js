@@ -180,52 +180,73 @@ class Epub extends EventEmitter {
      */
     async parseRootFile({package:pkg}) {
         this.version = pkg._attributes.version || '2.0';
-        this.parseMetadata(pkg.metadata)
-        this.parseManifest(pkg.manifest)
-        this.parseSpine(pkg.spine)
-        this.parseTOC().then(() => {
-            this.emit("loaded")
-        })
+
+        this.metadata = this.parseMetadata(pkg.metadata)
+        this.emit("parsed-metadata")
+
+        this.manifest = this.parseManifest(pkg.manifest)
+        this.emit("parsed-manifest")
+
+        this.spine = this.parseSpine(pkg.spine, this.manifest)
+        this.emit("parsed-spine")
+
+        this.parseFlow(this.spine.contents);
+        this.emit("parsed-flow")
+
+        this.toc = await this.parseTOC(this.manifest, this.spine.toc)
+        this.emit("parsed-toc")
+        
+        this.emit("loaded")
     }
 
     /**
-     * @param {Array} manifest 
+     * @param {Object} _manifest 
+     * @param {Array<Object>} _manifest.item
      */
-    parseManifest(manifest) {
-        for(const item of manifest.item) {
+    parseManifest(_manifest) {
+        const manifest = {}
+        console.log("mmm", _manifest.item);
+        for(const item of _manifest.item) {
             const element = item._attributes
             element.href = this.rootPath.alter(element.href)
 
-            this.manifest[element.id] = element
+            manifest[element.id] = element
         }
-        this.emit("parsed-manifest")
+
+        return manifest;
     }
 
     /**
      * 
      * @param {Object} spine 
      */
-    parseSpine(spine) {
-        this.spine = Object.assign(
+    parseSpine(_spine, manifest) {
+        const spine = Object.assign(
             this.spine, 
-            spine._attributes
+            _spine._attributes
         )
 
-        if (spine.itemref) {
-            spine.itemref = toArray(spine.itemref)
-            for (const {_attributes} of spine.itemref) {
-                const element = Object.assign({}, this.manifest[_attributes.idref] )
+        if (_spine.itemref) {
+            _spine.itemref = toArray(_spine.itemref)
+            for (const {_attributes} of _spine.itemref) {
+                const element = Object.assign({}, manifest[_attributes.idref] )
                 this.spine.contents.push(element)
             }
         }
 
-        for (const item of this.spine.contents) {
-            this.flow.set(item.id, item);
-        }
-
-        this.emit("parsed-spine")
+        return spine; 
     }
 
+    /**
+     * 
+     * @param {Array} contents 
+     * @returns 
+     */
+    parseFlow(contents) {
+        contents.map(item => {
+            this.flow.set(item.id, item);
+        })
+    }
     /**
      * @param {String} txt 
      * @returns String: the UUID
@@ -248,53 +269,54 @@ class Epub extends EventEmitter {
      * Emits a "parsed-metadata" event
      * @param {Object} metadata 
      */
-    parseMetadata(metadata) {
-        for(const [k,v] of Object.entries(metadata)) {
+    parseMetadata(_metadata) {
+        const metadata = {};
+        for(const [k,v] of Object.entries(_metadata)) {
             const keyparts = k.split(":");
             const key = (keyparts[keyparts.length-1] || "").toLowerCase().trim();
-            const text = v._text
+            const text = "" + v._text
             switch (key) {
                 case "publisher":
-                    this.metadata.publisher = text
+                    metadata.publisher = text
                     break;
                 case "language":
-                    this.metadata.language = text
+                    metadata.language = text
                     break;
                 case "title":
-                    this.metadata.title = text
+                    metadata.title = text
                     break;
                 case "subject":
-                    this.metadata.subject = text
+                    metadata.subject = text
                     break;
                 case "description":
-                    this.metadata.description = text
+                    metadata.description = text
                     break;
                 case "creator":
                     if (Array.isArray(v)) {
-                        this.metadata.creator = v.map(item => {
+                        metadata.creator = v.map(item => {
                             return item._text
                         }).join(" | ")
                     } else {
-                        this.metadata.creator = text
+                        metadata.creator = text
                     }
                     break;
                 case "date":
-                    this.metadata.date = text
+                    metadata.date = text
                     break;
                 case "identifier":
                     if(Array.isArray(v)) {
-                        this.metadata.UUID = this.extractUUID(v[0]._text)
+                        metadata.UUID = this.extractUUID(v[0]._text)
                     } else if (v["opf:scheme"] == "ISBN") {
-                        this.metadata.ISBN = text;
+                        metadata.ISBN = text;
                     } else {
-                        this.metadata.UUID = this.extractUUID(text)
+                        metadata.UUID = this.extractUUID(text)
                     }
                     
                     break;
             }
         }
 
-        this.emit("parsed-metadata")
+        return metadata;
     }
 
     /**
@@ -305,19 +327,22 @@ class Epub extends EventEmitter {
      * Read : https://docs.fileformat.com/ebook/ncx/
      * 
      * Emits a "parsed-toc" event
+     * @param {Object} manifest
+     * @param {Object} _toc
      */
-    async parseTOC() {
-        const hasNCX = Boolean(this.spine.toc)
+    async parseTOC(manifest, _toc) {
+        const hasNCX = Boolean(_toc)
         let toc, tocElem;
 
         console.log("has NCX:", hasNCX);
 
         tocElem = (hasNCX) ? 
-            this.manifest[this.spine.toc]
-            :this.manifest["toc"];
+            manifest[_toc]
+            :manifest["toc"];
 
         const IDs = {};
-        for (const [k, v] of Object.entries(this.manifest)) {
+        
+        for (const [k, v] of Object.entries(manifest)) {
             IDs[v.href] = k
         }
         const {data} = await this.getFileContents(tocElem.href)
@@ -329,34 +354,32 @@ class Epub extends EventEmitter {
         if (hasNCX) {
             const path = tocElem.href.split("/")
             path.pop();
-            toc = this.walkNavMap({
+            toc = this.walkNavMap(
+                {
                 "branch": xml.ncx.navMap.navPoint,
                 "path" : path, 
                 "IDs": IDs
-            })
-        } else {
-            toc = this.walkTOC(xml.html.body)
-        }
+                }
+                , manifest
+            )
+        } else
+            toc = this.walkTOC(xml.html.body, manifest);
 
-        this.toc = this.matchTOCWithManifest(toc);
-        this.emit("parsed-toc")
+        return toc = this.matchTOCWithManifest(toc, manifest);
     }
 
-    matchTOCWithManifest(toc) {
+    matchTOCWithManifest(toc, manifest) {
         for (const [id, elem] of toc) {
-
-            if (elem.href.includes(id)) {
-                continue                                                                            
-            }
+            if (elem.href.includes(id))
+                continue               
 
             let href;
             //Remove white space and page jumps
-            if (elem.href.includes("#")) {
+            if (elem.href.includes("#"))
                 [href] = elem.href.trim().split("#", 1)
-            }
 
-            for (const key in this.manifest) {
-                if (href == this.manifest[key].href) {
+            for (const key in manifest) {
+                if (href == manifest[key].href) {
                     elem.id = key;
                     break;
                 }
@@ -368,8 +391,9 @@ class Epub extends EventEmitter {
     /**
      * Builds the TOC using the body of the xml from the TOC file. 
      * @param {Object} body
+     * @param {Object} manifest
      */
-    walkTOC(body) {
+    walkTOC(body, manifest) {
         let order = 0;
         const IDs = {}
         const toc = new Map()
@@ -377,11 +401,10 @@ class Epub extends EventEmitter {
             let _id = p._attributes.id
             _id = _id.replace(/toc(-|:)/i, "").trim()
             let title = p.a._text;
-            if (!this.manifest[_id]) {
+            if (!manifest[_id])
                 continue
-            }
 
-            const element = this.manifest[_id];
+            const element = manifest[_id];
             element.title = title;
             element.order = order++;
 
@@ -401,7 +424,7 @@ class Epub extends EventEmitter {
      * @param {Number} obj.level
      * @returns {Map}
      */
-    walkNavMap({branch, path, IDs, level = 0}) {
+    walkNavMap({branch, path, IDs, level = 0}, manifest) {
         // don't go too deep
         if (level > 7) {
             return [];
@@ -442,17 +465,20 @@ class Epub extends EventEmitter {
 
             if(IDs[element.href]) {
                 // link existing object
-                element = this.manifest[IDs[element.href]];
+                element = manifest[IDs[element.href]];
                 element.title = title;
                 element.order = order;
                 element.level = level;
                 element.navPoint = (part.navPoint) ?
-                    this.walkNavMap({
+                    this.walkNavMap(
+                        {
                         "branch": part.navPoint,
                         "path" : path, 
                         "IDs": IDs,
                         "level": level + 1
-                    })
+                        }
+                        , manifest
+                    )
                     : false;
             } else {
                 // use new one
@@ -525,9 +551,8 @@ class Epub extends EventEmitter {
             const src = this.rootPath.alter(img.src || img.dataset.src)
             img.src = ""
             for(const {id, href} of Object.values(this.manifest)) {
-                if (href == src) {
+                if (href == src)
                     img.src = await this.getImage(id)
-                }
             }
         }
 
