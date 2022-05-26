@@ -205,7 +205,6 @@ class Epub extends EventEmitter {
      */
     parseManifest(_manifest) {
         const manifest = {}
-        console.log("mmm", _manifest.item);
         for(const item of _manifest.item) {
             const element = item._attributes
             element.href = this.rootPath.alter(element.href)
@@ -222,15 +221,15 @@ class Epub extends EventEmitter {
      */
     parseSpine(_spine, manifest) {
         const spine = Object.assign(
-            this.spine, 
+            this.spine,  //Required Side Effect
             _spine._attributes
         )
-
         if (_spine.itemref) {
             _spine.itemref = toArray(_spine.itemref)
+
             for (const {_attributes} of _spine.itemref) {
                 const element = Object.assign({}, manifest[_attributes.idref] )
-                this.spine.contents.push(element)
+                spine.contents.push(element)
             }
         }
 
