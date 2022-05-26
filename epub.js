@@ -3,10 +3,14 @@ import * as zip from "@zip.js/zip.js"
 import convert from "xml-js";
 import toArray from "./toArray.js"
 import removeChildsWithTags from "./removeChildsWithTags.js";
-import simplifyHTMLTree from "./simplifyHTMLTree.js";
 import RootPath from "./RootPath.js";
 class Epub extends EventEmitter {
-    constructor(file) {
+    /**
+     * 
+     * @param {File} file 
+     * @param {Function} chapterTransformer - Must accept one argument that accepts an HTMLDIVElement that will act like a DocumentFragment.
+     */
+    constructor(file, chapterTransformer = undefined) {
         super();
 
         this.file = {
@@ -21,7 +25,7 @@ class Epub extends EventEmitter {
         this.spine = {toc: false, contents: []};
         this.flow = new Map();
         this.toc = new Map();
-
+        this.chapterTransformer = chapterTransformer
         this.cache = {
             text : {},
             setText(id, t) {
@@ -484,6 +488,7 @@ class Epub extends EventEmitter {
     * Gets the text from a file based on id. 
     * Replaces image and link URL's
     * and removes <head> etc. elements. 
+    * If the chapterTransformer function is set, will pass it to the root element before returning.
     * @param {String} id :Manifest id of the file
     * @returns {Promise<String>} : Chapter text for mime type application/xhtml+xml
     */
@@ -542,7 +547,8 @@ class Epub extends EventEmitter {
             }
         }
 
-        str = simplifyHTMLTree(frag).innerHTML;
+        if (typeof this.chapterTransformer == "function")
+            str = this.chapterTransformer(frag).innerHTML;
 
         this.cache.setText(id, str)
         return str
