@@ -76,9 +76,8 @@ class Epub extends EventEmitter {
             //Allow partial matches
             const eFN = entry.filename.toLowerCase();
             const fn = name.toLowerCase();
-            if (eFN.includes(fn) || fn.includes(eFN)) {
+            if (eFN.includes(fn) || fn.includes(eFN))
                 return entry;
-            }
         }
 
         this.error(name + " not found in archive!")
@@ -93,10 +92,8 @@ class Epub extends EventEmitter {
         switch(w) {
             case "text":
                 return new zip.TextWriter()
-            break;
             case "blob":
                 return new zip.BlobWriter() 
-            break;
         }
     }
 
@@ -257,9 +254,8 @@ class Epub extends EventEmitter {
         if (typeof txt == "string") {
             txt = txt.toLowerCase()
             let parts = txt.split(":")
-            if (parts.includes("uuid")) {
+            if (parts.includes("uuid"))
                 return parts[parts.length - 1];
-            }
         }
     
         return ""
@@ -335,19 +331,19 @@ class Epub extends EventEmitter {
 
         console.log("has NCX:", hasNCX);
 
-        tocElem = (hasNCX) ? 
-            manifest[_toc]
-            :manifest["toc"];
-
+        tocElem = manifest[
+            (hasNCX) ? _toc:"toc"
+        ]
+        
         const IDs = {};
         
         for (const [k, v] of Object.entries(manifest)) {
             IDs[v.href] = k
         }
         const {data} = await this.getFileContents(tocElem.href)
-        if(!data) {
-            this.emit("No TOC!!!")
-        }
+        if(!data)
+            this.error("No TOC!!!");
+
         const xml = this.xml2js(data)
 
         if (hasNCX) {
@@ -425,9 +421,8 @@ class Epub extends EventEmitter {
      */
     walkNavMap({branch, path, IDs, level = 0}, manifest) {
         // don't go too deep
-        if (level > 7) {
+        if (level > 7)
             return [];
-        }
 
         const output = new Map();
         for (const part of toArray(branch)) {
@@ -437,19 +432,16 @@ class Epub extends EventEmitter {
 
             let title = "";
                 
-            if (part.navLabel) {
+            if (part.navLabel)
                 title = (part.navLabel.text._text || part.navLabel).trim()
-            }
 
             let order = Number(part._attributes.playOrder || 0)
-            if (isNaN(order)) {
+            if (isNaN(order))
                 order = 0;
-            }
 
             let href = part.content._attributes.src
-            if (typeof href == "string") {
+            if (typeof href == "string")
                 href = href.trim();
-            }
 
             let element = {
                 level: level,
@@ -479,10 +471,8 @@ class Epub extends EventEmitter {
                         , manifest
                     )
                     : false;
-            } else {
-                // use new one
+            } else // use new one
                 element.id = (part._attributes.id || "").trim();
-            }
 
             output.set(element.id, element);
         }
@@ -498,10 +488,8 @@ class Epub extends EventEmitter {
     * @returns {Promise<String>} : Chapter text for mime type application/xhtml+xml
     */
      async getContent(id) {
-        const isCached = Boolean(Object.keys(this.cache.text).includes(id))
-        if (isCached) {
-            return this.cache.text[id]
-        }
+        if (Object.keys(this.cache.text).includes(id))
+            return this.cache.text[id];
 
         let str = await this.getContentRaw(id);
     
@@ -522,9 +510,8 @@ class Epub extends EventEmitter {
 
         for (const elem of frag.querySelectorAll("*")) {
             for (const {name} of elem.attributes) {
-                if (onEvent.test(name)) {
-                    elem.removeAttribute(name)
-                }
+                if (onEvent.test(name))
+                    elem.removeAttribute(name);
             }
         }
 
@@ -566,16 +553,15 @@ class Epub extends EventEmitter {
      * @returns {Promise<String>} : Raw Chapter text for mime type application/xhtml+xml
      **/
     async getContentRaw(id) {
-        if (!this.manifest[id]) {
-            return ""
-        }
+        if (!this.manifest[id])
+            return "";
+    
         const allowedMIMETypes = /^(application\/xhtml\+xml|image\/svg\+xml)$/i;
         const elem = this.manifest[id]
 
         let match = allowedMIMETypes.test(elem["media-type"])
-        if (!match) {
-            this.error("Invalid mime type for chapter")
-        }
+        if (!match)
+            this.error("Invalid mime type for chapter");
 
         return (await this.getFileContents(elem.href)).data;
     }
@@ -586,20 +572,18 @@ class Epub extends EventEmitter {
      * @returns {Promise<Blob>} Returns a promise of the image as a blob if it has a proper mime type.
      */
     async getImage(id) {
-        if (!this.manifest[id]) {
-            return null
-        }
+        if (!this.manifest[id])
+            return null;
 
-        if(this.cache.image[id]) {
-            return this.cache.image[id]
-        }
+        if(this.cache.image[id])
+            return this.cache.image[id];
 
         const imageType = /^image\//i;
         const m = this.manifest[id]["media-type"]
         let match = imageType.test(m.trim())
 
         if (!match) {
-            console.log("Warning: Invalid mime type for image!");
+            console.log("Warning: Invalid mime type for image: " + id);
             return "";
         }
 
