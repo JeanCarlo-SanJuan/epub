@@ -42,6 +42,9 @@ class Epub extends EventEmitter {
         this.emit("error", new Error(msg));
     }
 
+    errorMIME(name) {
+        this.error("Invalid mimetype for: " + name)
+    }
     /**
      *  Opens the epub file with Zip unpacker, retrieves file listing
      *  and runs mime type check
@@ -117,9 +120,9 @@ class Epub extends EventEmitter {
      *  are "application/epub+zip". On success, runs root file check.
      **/
     async checkMimeType() {
-        const {"file": mimeFile, "data":txt} = await this.getFileContents("mimetype")
-        this.file.mime = mimeFile;
-        if (txt != "application/epub+zip") {
+        const {file, data} = await this.getFileContents("mimetype")
+        this.file.mime = file;
+        if (data != "application/epub+zip") {
             this.error("Unsupported mime type");
             return;
         }
@@ -147,7 +150,7 @@ class Epub extends EventEmitter {
         const {"full-path": fullPath, "media-type": mediaType} = rootFile._attributes;
 
         if (mediaType != "application/oebps-package+xml") {
-            this.error("Invalid mime type for " + fullPath)
+            this.errorMIME(fullPath)
         }
 
         this.file.rootName = fullPath
@@ -191,7 +194,7 @@ class Epub extends EventEmitter {
         this.spine = this.parseSpine(pkg.spine, this.manifest)
         this.emit("parsed-spine")
 
-        this.parseFlow(this.spine.contents);
+        this.flow = this.parseFlow(this.spine.contents);
         this.emit("parsed-flow")
 
         this.toc = await this.parseTOC(this.manifest, this.spine.toc)
@@ -243,9 +246,12 @@ class Epub extends EventEmitter {
      * @returns 
      */
     parseFlow(contents) {
+        const flow = new Map()
         contents.map(item => {
-            this.flow.set(item.id, item);
+            flow.set(item.id, item);
         })
+
+        return flow;
     }
     /**
      * @param {String} txt 
@@ -567,7 +573,7 @@ class Epub extends EventEmitter {
 
         let match = allowedMIMETypes.test(elem["media-type"])
         if (!match)
-            this.error("Invalid mime type for chapter");
+            this.errorMIME("chapter - " + id);
 
         return (await this.getFileContents(elem.href)).data;
     }
@@ -610,12 +616,12 @@ class Epub extends EventEmitter {
     }
 
     /**
-     *  Parses the tree to see if there's an ecnryption file, signifying the presence of DRM
+     *  Parses the tree to see if there's an encryption file, signifying the presence of DRM
      *  see: https://stackoverflow.com/questions/14442968/how-to-check-if-an-epub-file-is-drm-protected
      **/
     hasDRM () {
         const drmFile = 'META-INF/encryption.xml';
-        return Boolean(this.getFileInArchive(drmFile));
+        return Object.keys(this.manifest).includes(drmFile);
     }
 }
 
