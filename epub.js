@@ -58,10 +58,8 @@ class Epub extends EventEmitter {
         // close the ZipReader
         await this.reader.close();
 
-        if (!this.entries) {
-            this.error("No files in archive")
-            return;
-        }
+        if (!this.entries)
+            this.error("No files in archive");
 
         this.checkMimeType();
     }
@@ -74,11 +72,11 @@ class Epub extends EventEmitter {
     getFileInArchive(name) {
         for (const entry of this.entries) {
             if (entry.directory)
-                continue
+                continue;
 
             //Remove leading / for paths
             if (name[0] == "/")
-                name = name.slice(1)
+                name = name.slice(1);
 
             //Allow partial matches
             const eFN = entry.filename.toLowerCase();
@@ -122,10 +120,8 @@ class Epub extends EventEmitter {
     async checkMimeType() {
         const {file, data} = await this.getFileContents("mimetype")
         this.file.mime = file;
-        if (data != "application/epub+zip") {
+        if (data != "application/epub+zip")
             this.error("Unsupported mime type");
-            return;
-        }
 
         this.getRootFiles();
     }
@@ -138,16 +134,17 @@ class Epub extends EventEmitter {
     async getRootFiles() {
         this.file.container = await this.getFileContents("meta-inf/container.xml")
         
-        const {data} = this.file.container
-        const {container} = this.xml2js(data.toString("utf-8").toLowerCase().trim())
-        if (!container.rootfiles || !container.rootfiles.rootfile) {
-            this.error("No rootfiles found")
-            return;
-        }
+        const {container} = this.xml2js(this.file.container.data
+            .toString("utf-8")
+            .toLowerCase()
+            .trim()
+        )
 
-        const rootFile = container.rootfiles.rootfile
+        if (!container.rootfiles || !container.rootfiles.rootfile)
+            this.error("No rootfiles found");
 
-        const {"full-path": fullPath, "media-type": mediaType} = rootFile._attributes;
+        const {"full-path": fullPath, "media-type": mediaType} = 
+            container.rootfiles.rootfile._attributes;
 
         if (mediaType != "application/oebps-package+xml") {
             this.errorMIME(fullPath)
@@ -169,8 +166,7 @@ class Epub extends EventEmitter {
     }
     async handleRootFile() {
         const {data} = await this.getFileContents(this.file.rootName)
-        const xml = this.xml2js(data)
-        this.rootXML = xml
+        this.rootXML = this.xml2js(data)
         this.emit("parsed-root")
     }
 
@@ -210,10 +206,10 @@ class Epub extends EventEmitter {
     parseManifest(_manifest) {
         const manifest = {}
         for(const item of _manifest.item) {
-            const element = item._attributes
-            element.href = this.rootPath.alter(element.href)
+            const elem = item._attributes
+            elem.href = this.rootPath.alter(elem.href)
 
-            manifest[element.id] = element
+            manifest[elem.id] = elem
         }
 
         return manifest;
@@ -247,9 +243,9 @@ class Epub extends EventEmitter {
      */
     parseFlow(contents) {
         const flow = new Map()
-        contents.map(item => {
-            flow.set(item.id, item);
-        })
+        contents.map(item =>
+            flow.set(item.id, item)
+        )
 
         return flow;
     }
@@ -277,25 +273,13 @@ class Epub extends EventEmitter {
     parseMetadata(_metadata) {
         const metadata = {};
         for(const [k,v] of Object.entries(_metadata)) {
-            const keyparts = k.split(":");
-            const key = (keyparts[keyparts.length-1] || "").toLowerCase().trim();
-            const text = "" + v._text
+            const 
+                keyparts = k.split(":"),
+                key = (keyparts[keyparts.length-1] || "").toLowerCase().trim(),
+                text = "" + v._text
+            ;
+            
             switch (key) {
-                case "publisher":
-                    metadata.publisher = text
-                    break;
-                case "language":
-                    metadata.language = text
-                    break;
-                case "title":
-                    metadata.title = text
-                    break;
-                case "subject":
-                    metadata.subject = text
-                    break;
-                case "description":
-                    metadata.description = text
-                    break;
                 case "creator":
                     if (Array.isArray(v)) {
                         metadata.creator = v.map(item => {
@@ -304,9 +288,6 @@ class Epub extends EventEmitter {
                     } else {
                         metadata.creator = text
                     }
-                    break;
-                case "date":
-                    metadata.date = text
                     break;
                 case "identifier":
                     if(Array.isArray(v)) {
@@ -318,6 +299,8 @@ class Epub extends EventEmitter {
                     }
                     
                     break;
+                default:
+                    this.manifest[key] = text;
             }
         }
 
@@ -621,7 +604,7 @@ class Epub extends EventEmitter {
      **/
     hasDRM () {
         const drmFile = 'META-INF/encryption.xml';
-        return Object.keys(this.manifest).includes(drmFile);
+        return Object.keys(this.entries).includes(drmFile);
     }
 }
 
