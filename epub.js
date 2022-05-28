@@ -394,12 +394,12 @@ class Epub extends EventEmitter {
      */
     walkTOC(body, manifest) {
         let order = 0;
-        const IDs = {}
         const toc = new Map()
         for (const p of body.p) {
             let _id = p._attributes.id
             _id = _id.replace(/toc(-|:)/i, "").trim()
             let title = p.a._text;
+
             if (!manifest[_id])
                 continue
 
@@ -578,22 +578,23 @@ class Epub extends EventEmitter {
      * @returns {Promise<Blob>} Returns a promise of the image as a blob if it has a proper mime type.
      */
     async getImage(id) {
-        if (!this.manifest[id])
-            return null;
-
         if(this.cache.image[id])
-            return this.cache.image[id];
+        return this.cache.image[id];
+
+        const item = this.manifest[id] || null;
+        if (item == null)
+            return item;
 
         const imageType = /^image\//i;
-        const m = this.manifest[id]["media-type"]
-        let match = imageType.test(m.trim())
+
+        let match = imageType.test(item["media-type"].trim())
 
         if (!match) {
             console.log("Warning: Invalid mime type for image: " + id);
             return "";
         }
 
-        const {"data": b} = await this.getFileContents(this.manifest[id].href, "blob")
+        const {data} = await this.getFileContents(item.href, "blob")
 
         const r = new FileReader();
         return new Promise((resolve, reject) => {
@@ -604,7 +605,7 @@ class Epub extends EventEmitter {
 
             r.onerror = () => reject(r.error);
 
-            r.readAsDataURL(b)
+            r.readAsDataURL(data)
         })
     }
 
