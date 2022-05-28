@@ -58,10 +58,10 @@ class Epub extends EventEmitter {
         // close the ZipReader
         await this.reader.close();
 
-        if (!this.entries)
+        if (this.entries)
+            this.checkMimeType();
+        else
             this.error("No files in archive");
-
-        this.checkMimeType();
     }
     
     /**
