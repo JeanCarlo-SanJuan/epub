@@ -223,8 +223,8 @@ export class Epub extends EventEmitter {
         for(const item of _manifest.item) {
             const elem = item._attributes
             elem.href = this.rootPath.alter(elem.href)
-
-            manifest[elem.id] = elem
+            elem.id = elem.id.replace('.','_')
+            manifest[(elem.id + "").replace('.','_')] = elem
         }
 
         return manifest;
@@ -243,7 +243,8 @@ export class Epub extends EventEmitter {
             _spine.itemref = toArray(_spine.itemref)
 
             for (const {_attributes} of _spine.itemref) {
-                const element = Object.assign({}, manifest[_attributes.idref] )
+                const element = Object.assign({}, manifest[_attributes.idref.replace('.', '_')])
+                element.id = element.id.replace('.', '_')
                 spine.contents.push(element)
             }
         }
@@ -373,8 +374,10 @@ export class Epub extends EventEmitter {
 
     matchTOCWithManifest(toc, manifest) {
         for (const [id, elem] of toc) {
-            if (elem.href.includes(id))
-                continue               
+
+            if (elem.href.includes(id)) {
+                continue
+            }
 
             let href;
             //Remove white space and page jumps
@@ -401,7 +404,10 @@ export class Epub extends EventEmitter {
         const toc = new Map()
         for (const p of body.p) {
             let _id = p._attributes.id
-            _id = _id.replace(/toc(-|:)/i, "").trim()
+            _id = _id
+                .replace('.','_')
+                .replace(/toc(-|:)/i, "")
+                .trim()
             let title = p.a._text;
 
             if (!manifest[_id])
@@ -410,7 +416,7 @@ export class Epub extends EventEmitter {
             const element = manifest[_id];
             element.title = title;
             element.order = order++;
-
+            element.id = element.id.replace('.', '_')
             toc.set(_id, element)
         }
 
@@ -468,6 +474,7 @@ export class Epub extends EventEmitter {
                 element.title = title;
                 element.order = order;
                 element.level = level;
+                element.id = element.id.replace('.','_')
                 element.navPoint = (part.navPoint) ?
                     this.walkNavMap(
                         {
@@ -529,6 +536,14 @@ export class Epub extends EventEmitter {
             a.href = a.href
                 .replace(/\.x?html?.+/, "") // Remove file extension
                 .replace(/(t|T)ext\//, "#") // remove subpath "text" and add ID anchor.
+            const _id = a.hash.slice(1);
+
+            for (const k in this.manifest) {
+                if (k.includes(_id)) {
+                    a.href = '#' + k
+                    break;
+                }
+            }
         }
 
         //Replace SVG <image> with <img>
@@ -544,10 +559,11 @@ export class Epub extends EventEmitter {
 
         for (const img of frag.querySelectorAll("img")) {
             const src = this.rootPath.alter(img.src || img.dataset.src)
-            img.src = ""
-            for(const {id, href} of Object.values(this.manifest)) {
-                if (href == src)
-                    img.src = await this.getImage(id)
+            img.dataset.src = src;
+            for(const _id in this.manifest) {
+                if(src == this.manifest[_id].href) {
+                    img.src = await this.getImage(_id)
+                }
             }
         }
 
@@ -587,12 +603,11 @@ export class Epub extends EventEmitter {
 
         const item = this.manifest[id] || null;
         if (item == null)
-            return item;
+            return "";
 
         const imageType = /^image\//i;
 
         let match = imageType.test(item["media-type"].trim())
-
         if (!match) {
             console.log("Warning: Invalid mime type for image: " + id);
             return "";
