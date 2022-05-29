@@ -4,7 +4,18 @@ import convert from "xml-js";
 import toArray from "./toArray.js"
 import removeChildsWithTags from "./removeChildsWithTags.js";
 import RootPath from "./RootPath.js";
-class Epub extends EventEmitter {
+
+export const ev = {
+    root : "parsed-root",
+    manifest: "parsed-manifest",
+    spine: "parsed-spine",
+    flow: "parsed-flow",
+    toc: "parsed-toc",
+    metadata: "parsed-metadata",
+    err: "error",
+    loaded: "loaded"
+}
+export class Epub extends EventEmitter {
     /**
      * 
      * @param {File} file 
@@ -39,19 +50,23 @@ class Epub extends EventEmitter {
     }
 
     error(msg) {
-        this.emit("error", new Error(msg));
+        this.emit(ev.err, new Error(msg));
     }
 
     errorMIME(name) {
         this.error("Invalid mimetype for: " + name)
     }
     /**
-     *  Opens the epub file with Zip unpacker, retrieves file listing
-     *  and runs mime type check
+     *  Extracts the epub files from a zip archive, retrieves file listing
+     *  and runs mime type check. May optionally set event listeners with an object. Note that "this" will be bounded to the Epub instance so it is suggested to use the Function keyword instead of arrow funcs. 
+     * @param {Object<string, Function>} events
      **/
-    async open() {
+    async open(events = {}) {
         this.reader = new zip.ZipReader(new zip.BlobReader(this.file.archive))
 
+        for (const [name, cb] of Object.entries(events)) {
+            this.on(name, cb.bind(this))
+        }
         // get all entries from the zip
         this.entries = await this.reader.getEntries();
 
@@ -182,21 +197,21 @@ class Epub extends EventEmitter {
         this.version = pkg._attributes.version || '2.0';
 
         this.metadata = this.parseMetadata(pkg.metadata)
-        this.emit("parsed-metadata")
+        this.emit(ev.metadata)
 
         this.manifest = this.parseManifest(pkg.manifest)
-        this.emit("parsed-manifest")
+        this.emit(ev.manifest)
 
         this.spine = this.parseSpine(pkg.spine, this.manifest)
-        this.emit("parsed-spine")
+        this.emit(ev.spine)
 
         this.flow = this.parseFlow(this.spine.contents);
-        this.emit("parsed-flow")
+        this.emit(ev.flow)
 
         this.toc = await this.parseTOC(this.manifest, this.spine.toc)
-        this.emit("parsed-toc")
+        this.emit(ev.toc)
         
-        this.emit("loaded")
+        this.emit(ev.loaded)
     }
 
     /**
@@ -608,4 +623,4 @@ class Epub extends EventEmitter {
     }
 }
 
-export default Epub
+export default Epub;
