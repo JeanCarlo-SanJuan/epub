@@ -315,7 +315,7 @@ export class Epub extends EventEmitter {
                     
                     break;
                 default:
-                    this.manifest[key] = text;
+                    metadata[key] = text;
             }
         }
 
