@@ -2,7 +2,7 @@ import EventEmitter from "events"
 import * as zip from "@zip.js/zip.js"
 import convert from "xml-js";
 import toArray from "./toArray.js"
-import removeChildsWithTags from "./removeChildsWithTags.js";
+import removeChildsWith from "./removeChildsWithSelectors.js";
 import RootPath from "./RootPath.js";
 
 export const ev = {
@@ -520,7 +520,7 @@ export class Epub extends EventEmitter {
         const frag = document.createElement("div");
         frag.innerHTML =  str;
 
-        removeChildsWithTags(frag, "script", "style");
+        removeChildsWith(frag, "script", "style");
         
         const onEvent = /^on.+/i;
 
