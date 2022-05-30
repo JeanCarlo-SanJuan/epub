@@ -21,7 +21,7 @@ packages:
     dev: false
 
   /emitter-component/1.1.1:
-    resolution: {integrity: sha1-Bl4tvtaVm/RwZ57avq95gdEAOrY=}
+    resolution: {integrity: sha512-G+mpdiAySMuB7kesVRLuyvYRqDmshB7ReKEVuyBPkzQlmiDiLrt7hHHIy4Aff552bgknVN7B2/d3lzhGO5dvpQ==}
     dev: false
 
   /events/3.3.0:

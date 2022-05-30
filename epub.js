@@ -133,10 +133,11 @@ export class Epub extends EventEmitter {
      *  are "application/epub+zip". On success, runs root file check.
      **/
     async checkMimeType() {
+        const target = "application/epub+zip";
         const {file, data} = await this.getFileContents("mimetype")
         this.file.mime = file;
-        if (data != "application/epub+zip")
-            this.error("Unsupported mime type");
+        if (data != target)
+            this.errorMIME(target);
 
         this.getRootFiles();
     }
@@ -182,7 +183,7 @@ export class Epub extends EventEmitter {
     async handleRootFile() {
         const {data} = await this.getFileContents(this.file.rootName)
         this.rootXML = this.xml2js(data)
-        this.emit("parsed-root")
+        this.emit(ev.root)
     }
 
     /**
@@ -199,7 +200,7 @@ export class Epub extends EventEmitter {
         this.metadata = this.parseMetadata(pkg.metadata)
         this.emit(ev.metadata)
 
-        this.manifest = this.parseManifest(pkg.manifest)
+        this.manifest = this.parseManifest(pkg.manifest.item)
         this.emit(ev.manifest)
 
         this.spine = this.parseSpine(pkg.spine, this.manifest)
@@ -215,16 +216,15 @@ export class Epub extends EventEmitter {
     }
 
     /**
-     * @param {Object} _manifest 
-     * @param {Array<Object>} _manifest.item
+     * @param {Array<Object>} items of the manifest.
      */
-    parseManifest(_manifest) {
+    parseManifest(items) {
         const manifest = {}
-        for(const item of _manifest.item) {
+        for(const item of items) {
             const elem = item._attributes
             elem.href = this.rootPath.alter(elem.href)
             elem.id = elem.id.replace('.','_')
-            manifest[(elem.id + "").replace('.','_')] = elem
+            manifest[elem.id] = elem
         }
 
         return manifest;
@@ -366,8 +366,10 @@ export class Epub extends EventEmitter {
                 }
                 , manifest
             )
-        } else
+        } else {
             toc = this.walkTOC(xml.html.body, manifest);
+            console.log("OPF", toc);
+        }
 
         return toc = this.matchTOCWithManifest(toc, manifest);
     }
@@ -420,7 +422,6 @@ export class Epub extends EventEmitter {
             toc.set(_id, element)
         }
 
-        console.log("OPF", toc);
         return toc;
     }
 
@@ -535,7 +536,7 @@ export class Epub extends EventEmitter {
         for (const a of frag.querySelectorAll("a")) {
             a.href = a.href
                 .replace(/\.x?html?.+/, "") // Remove file extension
-                .replace(/(t|T)ext\//, "#") // remove subpath "text" and add ID anchor.
+                .replace(/(t|T)ext\//, "#") // Remove subpath "text" and add ID anchor.
             const _id = a.hash.slice(1);
 
             for (const k in this.manifest) {
