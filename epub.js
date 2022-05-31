@@ -521,8 +521,9 @@ export class Epub extends EventEmitter {
         str.replace(/<body[^>]*?>(.*)<\/body[^>]*?>/i, (o, d) => {
             str = d.trim();
         });
-        const frag = document.createElement("div");
-        frag.innerHTML =  str;
+        const fragment = document.createElement("template");
+        fragment.innerHTML =  str;
+        const frag = fragment.content.firstElementChild
 
         removeChildsWith(frag, "script", "style");
         
@@ -571,7 +572,11 @@ export class Epub extends EventEmitter {
         }
 
         if (typeof this.chapterTransformer == "function")
-            str = this.chapterTransformer(frag).innerHTML;
+            try {
+                str = this.chapterTransformer(frag).innerHTML;
+            } catch(e) {
+                console.log("Transform failed: ", id);
+            }
 
         this.cache.setText(id, str)
         return str
