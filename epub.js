@@ -582,13 +582,14 @@ export class Epub extends EventEmitter {
      * @returns {Promise<String>} : Raw Chapter text for mime type application/xhtml+xml
      **/
     async getContentRaw(id) {
-        if (!this.manifest[id])
+        const elem = this.manifest[id] || null
+        
+        if (elem == null)
             return "";
     
         const allowedMIMETypes = /^(application\/xhtml\+xml|image\/svg\+xml)$/i;
-        const elem = this.manifest[id]
 
-        let match = allowedMIMETypes.test(elem["media-type"])
+        const match = allowedMIMETypes.test(elem["media-type"])
         if (!match)
             this.errorMIME("chapter - " + id);
 
@@ -610,7 +611,7 @@ export class Epub extends EventEmitter {
 
         const imageType = /^image\//i;
 
-        let match = imageType.test(item["media-type"].trim())
+        const match = imageType.test(item["media-type"].trim())
         if (!match) {
             console.log("Warning: Invalid mime type for image: " + id);
             return "";
