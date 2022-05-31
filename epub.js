@@ -412,10 +412,11 @@ export class Epub extends EventEmitter {
                 .trim()
             let title = p.a._text;
 
-            if (!manifest[_id])
+            const element = manifest[_id] || null;
+
+            if (element == null)
                 continue
 
-            const element = manifest[_id];
             element.title = title;
             element.order = order++;
             element.id = element.id.replace('.', '_')
@@ -469,9 +470,13 @@ export class Epub extends EventEmitter {
 
             element.href = path.concat([href]).join("/");
 
-            if(IDs[element.href]) {
-                // link existing object
-                element = manifest[IDs[element.href]];
+            const id = IDs[element.href] || null
+
+            if (id == null) // use new one
+                
+                element.id = (part._attributes.id || "").trim();
+            else { // link existing object
+                element = manifest[id];
                 element.title = title;
                 element.order = order;
                 element.level = level;
@@ -487,8 +492,7 @@ export class Epub extends EventEmitter {
                         , manifest
                     )
                     : false;
-            } else // use new one
-                element.id = (part._attributes.id || "").trim();
+            }
 
             output.set(element.id, element);
         }
@@ -509,7 +513,7 @@ export class Epub extends EventEmitter {
             return this.cache.text[id];
 
         let str = await this.getContentRaw(id);
-    
+        
         // remove linebreaks (no multi line matches in JS regex!)
         str = str.replace(/\r?\n/g, "\u0000");
 
@@ -517,7 +521,6 @@ export class Epub extends EventEmitter {
         str.replace(/<body[^>]*?>(.*)<\/body[^>]*?>/i, (o, d) => {
             str = d.trim();
         });
-
         const frag = document.createElement("div");
         frag.innerHTML =  str;
 
@@ -562,9 +565,8 @@ export class Epub extends EventEmitter {
             const src = this.rootPath.alter(img.src || img.dataset.src)
             img.dataset.src = src;
             for(const _id in this.manifest) {
-                if(src == this.manifest[_id].href) {
-                    img.src = await this.getImage(_id)
-                }
+                if(src == this.manifest[_id].href)
+                    img.src = await this.getImage(_id);
             }
         }
 
