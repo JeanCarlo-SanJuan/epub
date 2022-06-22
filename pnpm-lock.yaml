@@ -1,14 +1,14 @@
 lockfileVersion: 5.4
 
 specifiers:
-  '@zip.js/zip.js': ^2.4.12
+  '@zip.js/zip.js': ^2.4.20
   events: ^3.3.0
   sax: ^1.2.4
   stream: ^0.0.2
   xml-js: ^1.6.11
 
 dependencies:
-  '@zip.js/zip.js': 2.4.12
+  '@zip.js/zip.js': 2.4.20
   events: 3.3.0
   sax: 1.2.4
   stream: 0.0.2
@@ -16,8 +16,8 @@ dependencies:
 
 packages:
 
-  /@zip.js/zip.js/2.4.12:
-    resolution: {integrity: sha512-Y9VTILBi067CUNyaCTeLXxAVbB547EdUfAJZndfpnqYm8r2blVmHAqvggPYw2p89rTCvJAhDXlGkY4cv0+JYmA==}
+  /@zip.js/zip.js/2.4.20:
+    resolution: {integrity: sha512-7vPk3OVeU28c/Anlbkw3c+wNTwWpsk8ZR12YysqerqzdFu6sCd6lyff2nNEqHU+/sITKhDgMlFHQlkQBL7FEoA==}
     dev: false
 
   /emitter-component/1.1.1:
@@ -34,7 +34,7 @@ packages:
     dev: false
 
   /stream/0.0.2:
-    resolution: {integrity: sha1-f1Nj8Ff2WSxVlfALyAon9c7B8O8=}
+    resolution: {integrity: sha512-gCq3NDI2P35B2n6t76YJuOp7d6cN/C7Rt0577l91wllh0sY9ZBuw9KaSGqH/b0hzn3CWWJbpbW0W0WvQ1H/Q7g==}
     dependencies:
       emitter-component: 1.1.1
     dev: false
