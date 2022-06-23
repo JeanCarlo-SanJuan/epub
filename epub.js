@@ -236,9 +236,10 @@ export class Epub extends EventEmitter {
      */
     parseSpine(_spine, manifest) {
         const spine = Object.assign(
-            this.spine,  //Required Side Effect
+            {toc: false, contents: []},
             _spine._attributes
         )
+
         if (_spine.itemref) {
             _spine.itemref = toArray(_spine.itemref)
 
