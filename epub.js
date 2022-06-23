@@ -435,10 +435,10 @@ export class Epub extends EventEmitter {
      *  Walks the NavMap object through all levels and finds elements
      *  for TOC with NCX
      * @param {object} obj
-     * @param {Array | Object} obj.branch
-     * @param {Array} obj.path
+     * @param {Array<object>} obj.branch
+     * @param {Array<string>} obj.path
      * @param {Number} obj.level
-     * @returns {Map}
+     * @returns {Map<string, object>}
      */
     walkNavMap({branch, path, IDs, level = 0}, manifest) {
         // don't go too deep
@@ -447,22 +447,19 @@ export class Epub extends EventEmitter {
 
         const output = new Map();
         for (const part of toArray(branch)) {
-            
-            if (!part)
-                continue
-
             let title = "";
                 
             if (part.navLabel)
                 title = (part.navLabel.text._text || part.navLabel).trim()
 
-            let order = Number(part._attributes.playOrder || 0)
-            if (isNaN(order))
-                order = 0;
+            let order = Number(part._attributes.playOrder) || 0
 
             let href = part.content._attributes.src
+
             if (typeof href == "string")
                 href = href.trim();
+            else
+                continue;
 
             let element = {
                 level: level,
@@ -470,15 +467,11 @@ export class Epub extends EventEmitter {
                 title: title
             };
 
-            if (!href)
-                continue
-
             element.href = path.concat([href]).join("/");
 
             const id = IDs[element.href] || null
 
             if (id == null) // use new one
-                
                 element.id = (part._attributes.id || "").trim();
             else { // link existing object
                 element = manifest[id];
@@ -489,10 +482,10 @@ export class Epub extends EventEmitter {
                 element.navPoint = (part.navPoint) ?
                     this.walkNavMap(
                         {
-                        "branch": part.navPoint,
-                        "path" : path, 
-                        "IDs": IDs,
-                        "level": level + 1
+                            "branch": part.navPoint,
+                            path, 
+                            IDs,
+                            "level": level + 1
                         }
                         , manifest
                     )
@@ -576,7 +569,7 @@ export class Epub extends EventEmitter {
             }
         }
 
-        if (typeof this.chapterTransformer == "function")
+        if (this.chapterTransformer instanceof Function)
             try {
                 str = this.chapterTransformer(frag).innerHTML;
             } catch(e) {
