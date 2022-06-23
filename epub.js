@@ -18,7 +18,7 @@ export const ev = {
 export class Epub extends EventEmitter {
     /**
      * @param {File} file 
-     * @param {Function} chapterTransformer - Must accept one argument that accepts an HTMLDIVElement that will act like a DocumentFragment.
+     * @param {Function} chapterTransformer - Must accept one argument that accepts a DocumentFragment.
      */
     constructor(file, chapterTransformer = undefined) {
         super();
@@ -521,7 +521,7 @@ export class Epub extends EventEmitter {
         });
         const fragment = document.createElement("template");
         fragment.innerHTML =  str;
-        const frag = fragment.content.firstElementChild
+        const frag = fragment.content;
 
         removeChildsWith(frag, "script", "style");
         
@@ -564,17 +564,19 @@ export class Epub extends EventEmitter {
             const src = this.rootPath.alter(img.src || img.dataset.src)
             img.dataset.src = src;
             for(const _id in this.manifest) {
-                if(src == this.manifest[_id].href)
+                if(src == this.manifest[_id].href) {
                     img.src = await this.getImage(_id);
+                }
             }
         }
 
-        if (this.chapterTransformer instanceof Function)
+        if (this.chapterTransformer instanceof Function) {
             try {
                 str = this.chapterTransformer(frag).innerHTML;
             } catch(e) {
-                console.log("Transform failed: ", id);
+                console.log("Transform failed: ", id, e);
             }
+        }
 
         this.cache.setText(id, str)
         return str
@@ -606,7 +608,7 @@ export class Epub extends EventEmitter {
      */
     async getImage(id) {
         if(this.cache.image[id])
-        return this.cache.image[id];
+            return this.cache.image[id];
 
         const item = this.manifest[id] || null;
         if (item == null)
