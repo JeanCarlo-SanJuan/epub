@@ -17,7 +17,6 @@ export const ev = {
 }
 export class Epub extends EventEmitter {
     /**
-     * 
      * @param {File} file 
      * @param {Function} chapterTransformer - Must accept one argument that accepts an HTMLDIVElement that will act like a DocumentFragment.
      */
@@ -59,7 +58,7 @@ export class Epub extends EventEmitter {
     /**
      *  Extracts the epub files from a zip archive, retrieves file listing
      *  and runs mime type check. May optionally set event listeners with an object. Note that "this" will be bounded to the Epub instance so it is suggested to use the Function keyword instead of arrow funcs. 
-     * @param {Object<string, Function>} events
+     * @param {object} events
      **/
     async open(events = {}) {
         this.reader = new zip.ZipReader(new zip.BlobReader(this.file.archive))
@@ -81,8 +80,8 @@ export class Epub extends EventEmitter {
     
     /**
      * 
-     * @param {String} name 
-     * @returns {zip.Entry}
+     * @param {string} name 
+     * @returns {zip.Entry} a file from the zip
      */
     getFileInArchive(name) {
         for (const entry of this.entries) {
@@ -105,8 +104,8 @@ export class Epub extends EventEmitter {
 
     /**
      * 
-     * @param {String} w 
-     * @returns 
+     * @param {string} w 
+     * @returns the appropriate zip writer
      */
      determineWriter(w) {
         switch(w) {
@@ -119,9 +118,9 @@ export class Epub extends EventEmitter {
 
     /**
      * Reads a file from the archive
-     * @param {String} name 
-     * @param {String} writer 
-     * @returns {Promise<{Object, Object}>
+     * @param {string} name 
+     * @param {string} writer 
+     * @returns {Promise<{object, object}>
      */
     async getFileContents(name, writer = "text") {
         const f = this.getFileInArchive(name)
@@ -174,7 +173,7 @@ export class Epub extends EventEmitter {
 
     /**
      * Converts text to Object
-     * @param {String} data 
+     * @param {string} data 
      * @returns convert.elementCompact
      */
     xml2js(data) {
@@ -188,11 +187,11 @@ export class Epub extends EventEmitter {
 
     /**
      * 
-     * @param {Object} package
-     * @param {Object} package.manifest
-     * @param {Object} package.metadata
-     * @param {Object} package.spine
-     * @param {Object} package._attributes
+     * @param {object} package
+     * @param {object} package.manifest
+     * @param {object} package.metadata
+     * @param {object} package.spine
+     * @param {object} package._attributes
      */
     async parseRootFile({package:pkg}) {
         this.version = pkg._attributes.version || '2.0';
@@ -216,7 +215,7 @@ export class Epub extends EventEmitter {
     }
 
     /**
-     * @param {Array<Object>} items of the manifest.
+     * @param {Array<object>} items of the manifest.
      */
     parseManifest(items) {
         const manifest = {}
@@ -232,7 +231,8 @@ export class Epub extends EventEmitter {
 
     /**
      * 
-     * @param {Object} spine 
+     * @param {object} _spine 
+     * @param {object} manifest
      */
     parseSpine(_spine, manifest) {
         const spine = Object.assign(
@@ -254,8 +254,8 @@ export class Epub extends EventEmitter {
 
     /**
      * 
-     * @param {Array} contents 
-     * @returns 
+     * @param {Array<object>} contents 
+     * @returns {Map<string, object>} the book's flow
      */
     parseFlow(contents) {
         const flow = new Map()
@@ -266,8 +266,8 @@ export class Epub extends EventEmitter {
         return flow;
     }
     /**
-     * @param {String} txt 
-     * @returns String: the UUID
+     * @param {string} txt 
+     * @returns {string} the UUID
      * 
      * Helper function for parsing metadata
      */
@@ -284,7 +284,7 @@ export class Epub extends EventEmitter {
     }
     /**
      * Emits a "parsed-metadata" event
-     * @param {Object} metadata 
+     * @param {object} _metadata 
      */
     parseMetadata(_metadata) {
         const metadata = {};
@@ -331,8 +331,8 @@ export class Epub extends EventEmitter {
      * Read : https://docs.fileformat.com/ebook/ncx/
      * 
      * Emits a "parsed-toc" event
-     * @param {Object} manifest
-     * @param {Object} _toc
+     * @param {object} manifest
+     * @param {object} _toc
      */
     async parseTOC(manifest, _toc) {
         const hasNCX = Boolean(_toc)
@@ -374,6 +374,12 @@ export class Epub extends EventEmitter {
         return toc = this.matchTOCWithManifest(toc, manifest);
     }
 
+    /**
+     * 
+     * @param {object} toc 
+     * @param {object} manifest 
+     * @returns {object} the altered toc
+     */
     matchTOCWithManifest(toc, manifest) {
         for (const [id, elem] of toc) {
 
@@ -398,8 +404,8 @@ export class Epub extends EventEmitter {
     }
     /**
      * Builds the TOC using the body of the xml from the TOC file. 
-     * @param {Object} body
-     * @param {Object} manifest
+     * @param {object} body
+     * @param {object} manifest
      */
     walkTOC(body, manifest) {
         let order = 0;
@@ -429,7 +435,7 @@ export class Epub extends EventEmitter {
     /**
      *  Walks the NavMap object through all levels and finds elements
      *  for TOC with NCX
-     * @param {Object} obj
+     * @param {object} obj
      * @param {Array | Object} obj.branch
      * @param {Array} obj.path
      * @param {Number} obj.level
@@ -505,8 +511,8 @@ export class Epub extends EventEmitter {
     * Replaces image and link URL's
     * and removes <head> etc. elements. 
     * If the chapterTransformer function is set, will pass it to the root element before returning.
-    * @param {String} id :Manifest id of the file
-    * @returns {Promise<String>} : Chapter text for mime type application/xhtml+xml
+    * @param {string} id :Manifest id of the file
+    * @returns {Promise<string>} : Chapter text for mime type application/xhtml+xml
     */
      async getContent(id) {
         if (Object.keys(this.cache.text).includes(id))
@@ -583,8 +589,8 @@ export class Epub extends EventEmitter {
      }
 
      /**
-     * @param {String} id :Manifest id value for the content
-     * @returns {Promise<String>} : Raw Chapter text for mime type application/xhtml+xml
+     * @param {string} id :Manifest id value for the content
+     * @returns {Promise<string>} : Raw Chapter text for mime type application/xhtml+xml
      **/
     async getContentRaw(id) {
         const elem = this.manifest[id] || null
@@ -603,7 +609,7 @@ export class Epub extends EventEmitter {
 
     /**
      *  Return only images with mime type image
-     * @param {String} id of the image file in the manifest
+     * @param {string} id of the image file in the manifest
      * @returns {Promise<Blob>} Returns a promise of the image as a blob if it has a proper mime type.
      */
     async getImage(id) {
