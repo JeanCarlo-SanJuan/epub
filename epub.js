@@ -208,7 +208,9 @@ export class Epub extends EventEmitter {
         this.flow = this.parseFlow(this.spine.contents);
         this.emit(ev.flow)
 
-        this.toc = await this.parseTOC(this.manifest, this.spine.toc)
+        const result = await this.parseTOC(this.manifest, this.spine.toc)
+        this.toc = result.toc
+        console.log(result.hasNCX ? "NCX":"OPF", this.toc);
         this.emit(ev.toc)
         
         this.emit(ev.loaded)
@@ -230,23 +232,23 @@ export class Epub extends EventEmitter {
     }
 
     /**
-     * 
-     * @param {object} _spine 
+     * @param {{itemref:object,_attributes:object}} _spine
      * @param {object} manifest
+     * @returns {object} the book's spine
      */
-    parseSpine(_spine, manifest) {
+    parseSpine({itemref, _attributes}, manifest) {
         const spine = Object.assign(
             {toc: false, contents: []},
-            _spine._attributes
+            _attributes
         )
 
-        if (_spine.itemref) {
-            _spine.itemref = toArray(_spine.itemref)
+        if (itemref) {
+            itemref = toArray(itemref)
 
-            for (const {_attributes} of _spine.itemref) {
-                const element = Object.assign({}, manifest[_attributes.idref.replace('.', '_')])
-                element.id = element.id.replace('.', '_')
-                spine.contents.push(element)
+            for (const {_attributes:atrs} of itemref) {
+                const elem = Object.assign({}, manifest[atrs.idref.replace('.', '_')])
+                elem.id = elem.id.replace('.', '_')
+                spine.contents.push(elem)
             }
         }
 
@@ -331,15 +333,12 @@ export class Epub extends EventEmitter {
      * Since NCX is not required in EPUB3 use option 2.
      * Read : https://docs.fileformat.com/ebook/ncx/
      * 
-     * Emits a "parsed-toc" event
      * @param {object} manifest
      * @param {object} _toc
      */
     async parseTOC(manifest, _toc) {
         const hasNCX = Boolean(_toc)
         let toc, tocElem;
-
-        console.log("has NCX:", hasNCX);
 
         tocElem = manifest[
             (hasNCX) ? _toc:"toc"
@@ -369,10 +368,9 @@ export class Epub extends EventEmitter {
             )
         } else {
             toc = this.walkTOC(xml.html.body, manifest);
-            console.log("OPF", toc);
         }
 
-        return toc = this.matchTOCWithManifest(toc, manifest);
+        return {hasNCX, toc: this.matchTOCWithManifest(toc, manifest)}
     }
 
     /**
