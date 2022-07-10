@@ -82,19 +82,29 @@ export class Epub extends EventEmitter {
      * 
      * @param {string} name 
      * @returns {zip.Entry} a file from the zip
+     * Warning: By default: 
+     * 1. The match is case INSENSITIVE to match the linux fs.
+     * 2. Partial matches are allowed as it is assumed that the entries are alphanumerically ordered.
+     * 
+     * TODO: Remove the above assumptions
      */
-    getFileInArchive(name) {
+    getFileInArchive(name, isCaseSensitive=false) {
+        //Remove leading / for paths
+        let fn = name[0] == '/' ? name.slice(1):name;
+        if (isCaseSensitive==false) {
+            fn = fn.toLowerCase()
+        }
+
         for (const entry of this.entries) {
             if (entry.directory)
                 continue;
 
-            //Remove leading / for paths
-            if (name[0] == "/")
-                name = name.slice(1);
-
             //Allow partial matches
-            const eFN = entry.filename.toLowerCase();
-            const fn = name.toLowerCase();
+            let eFN = entry.filename;
+            if (isCaseSensitive == false) {
+                eFN = eFN.toLowerCase()
+            }
+
             if (eFN.includes(fn) || fn.includes(eFN))
                 return entry;
         }
