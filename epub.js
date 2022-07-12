@@ -2,7 +2,7 @@ import EventEmitter from "events"
 import * as zip from "@zip.js/zip.js"
 import convert from "xml-js";
 import toArray from "./toArray.js"
-import removeChildsWith from "./removeChildsWithSelectors.js";
+import removeChildsWith from "./removeChildsWithSelectors";
 import RootPath from "./RootPath.js";
 
 export const ev = {
@@ -521,19 +521,20 @@ export class Epub extends EventEmitter {
 
         let str = await this.getContentRaw(id);
         
-        // remove linebreaks (no multi line matches in JS regex!)
-        str = str.replace(/\r?\n/g, "\u0000");
+        const frag = ((text) => {
+            const p = new DOMParser()
+            let xmlD = p.parseFromString(text, "application/xhtml+xml");
+            const b = xmlD.querySelector("body")
+            if (b == null) {
+                throw new Error("No body tag for ID: " + id)
+            }
 
-         // keep only <body> contents
-        str.replace(/<body[^>]*?>(.*)<\/body[^>]*?>/i, (o, d) => {
-            str = d.trim();
-        });
-        const fragment = document.createElement("template");
-        fragment.innerHTML =  str;
-        const frag = fragment.content;
+            const f = document.createElement("template")
+            f.innerHTML = b.outerHTML;
+            removeChildsWith(f.content, "script", "style");
+            return f.content;
+        })(str);
 
-        removeChildsWith(frag, "script", "style");
-        
         const onEvent = /^on.+/i;
 
         for (const elem of frag.querySelectorAll("*")) {

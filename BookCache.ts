@@ -5,7 +5,7 @@ export default class BookCache {
         this.text[id] = t;
     }
 
-    setImage(id:string, blob:Blob) {
-        this.image[id] = blob;
+    setImage(id:string, base64str:string) {
+        this.image[id] = base64str;
     }
 }

@@ -1,30 +1,40 @@
 import { EventEmitter } from "events"
 import * as zip from "@zip.js/zip.js"
 import convert from "xml-js";
-import toArray from "./toArray.js"
 import removeChildsWith from "./removeChildsWithSelectors.js";
 import RootPath from "./RootPath.js";
 import EV from "./EV"
 import * as trait from "./traits";
-import { Thing } from "./traits";
 import BookCache from "./BookCache.js";
-import { dotToScore } from "./dotToScore";
 import { walkTOC } from "./walkTOC.js";
 import { matchTOCWithManifest } from "./matchTOCWithManifest";
 import { parseSpine } from "./parseSpine";
+import { parseManifest } from "./parseManifest.js";
+import { parseMetadata } from "./parseMetadata.js";
+import { parseFlow } from "./parseFlow.js";
+import { walkNavMap } from "./walknavMap.js";
+import {MIMEError} from "./error/MIMEError"
+export enum ChapterType {
+    text,
+    image
+}
+
+export type UnaryFX<T, RT> = (v:T) => RT;
+export type maybeChapterTransformerSignature = null | UnaryFX<DocumentFragment, HTMLElement>;
 export default class Epub extends EventEmitter {
-    info: trait.FileInfo = {
+    info: trait.Info = {
         archive:null,
         container:null,
         mime:null,
         rootName:null
     }
     metadata: trait.Metadata;
-    manifest: Object = {}
+    manifest: trait.Manifest = {}
     spine: trait.Spine;
-    flow = new Map()
+    flow = new trait.Flow();
     toc = new trait.TableOfContents()
-    chapterTransformer: Function
+    toc_type:string;
+    chapterTransformer: maybeChapterTransformerSignature;
     cache = new BookCache()
     reader: zip.ZipReader<Blob>
     entries: zip.Entry[]
@@ -38,10 +48,10 @@ export default class Epub extends EventEmitter {
 
     constructor
     (archive: File, 
-    chapterTransformer: null | ((df:DocumentFragment) => HTMLElement)
-    ) {
+    chapterTransformer: maybeChapterTransformerSignature  = null) {
         super();
         this.info.archive = archive
+        this.chapterTransformer = chapterTransformer;
     }
 
     error(msg: string) {
@@ -52,10 +62,6 @@ export default class Epub extends EventEmitter {
         this.emit("error", err)
     }
 
-    /* errorMIME(id: string, expected: string, actual: string) {
-        this.throw(new MIMEError(`Item with id: ${id} expected to ${expected} but was actually ${actual}`))
-    }
- */
     /**
  *  Extracts the epub files from a zip archive, retrieves file listing
  *  and runs mime type check. May optionally set event listeners with a Map. Note that "this" will be bounded to the Epub instance so it is suggested to use the Function keyword instead of arrow funcs. 
@@ -81,7 +87,7 @@ export default class Epub extends EventEmitter {
         if (this.entries)
             this.checkMimeType();
         else
-            this.error("No files in archive");
+            new Error(zip.ERR_ABORT + " no files in archive!")
     }
 
     /**
@@ -99,10 +105,9 @@ export default class Epub extends EventEmitter {
         this.getRootFiles()
     }
 
-    async readFile(name:string, writer="text"):Promise<trait.LoadedEntry> {
+    async readFile(name:string, writer:ChapterType=ChapterType.text):Promise<trait.LoadedEntry> {
         const file = await this.getFileInArchive(name);
         const w = this.determineWriter(writer);
-        //TS ignore
         return {
             file, 
             data: await file.getData(w)
@@ -123,7 +128,6 @@ export default class Epub extends EventEmitter {
         const maybeContainer = await this.readFile(ID);
 
         this.info.container = maybeContainer
-
         const { container } = this.xml2js(this.info.container.data
             .toString()
             .toLowerCase()
@@ -133,12 +137,12 @@ export default class Epub extends EventEmitter {
         if (!container.rootfiles || !container.rootfiles.rootfile) 
             this.error("No rootfiles found");
 
-        const { "full-path": fullPath, "media-type": mediaType } =
+        const { "full-path": fullPath, "media-type": mediaType }:{"full-path":string, "media-type": string} =
             container.rootfiles.rootfile._attributes;
 
-        const MIME = "application/oebps-package+xml"
-        if (mediaType != MIME) {
-            this.errorMIME(ID, MIME, mediaType)
+        const expected = "application/oebps-package+xml"
+        if (mediaType != expected) {
+            throw MIMEError.format({id:ID, actual:mediaType, expected})
         }
 
         this.info.rootName = fullPath
@@ -158,9 +162,9 @@ export default class Epub extends EventEmitter {
     /**
      * @returns the appropriate zip writer
      */
-    determineWriter(w: string="text") {
-        switch (w) {
-            case "image":
+    determineWriter(t:ChapterType) {
+        switch (t) {
+            case ChapterType.image:
                 return new zip.BlobWriter("image/*")
             default:
                 return new zip.TextWriter("utf-8")
@@ -204,32 +208,28 @@ export default class Epub extends EventEmitter {
     }
     async parseRootFile({package:pkg}:{package:trait.RootFile}) {
         this.version = pkg._attributes.version || "2.0";
-        this.metadata = this.parseMetadata(pkg.metadata)
+        this.metadata = parseMetadata(pkg.metadata)
         this.emit(EV.metadata)
 
-        this.manifest = this.parseManifest(pkg.manifest.item)
+        this.manifest = parseManifest(pkg.manifest.item, this.rootPath)
         this.emit(EV.manifest)
 
         this.spine = parseSpine(pkg.spine, this.manifest)
         this.emit(EV.spine)
 
-        this.flow = this.parseFlow(this.spine.contents);
+        this.flow = parseFlow(this.spine.contents);
         this.emit(EV.flow)
 
-        const result = await this.parseTOC(this.manifest, this.spine.toc)
-        this.toc = result.toc
-        console.log(result.hasNCX ? "NCX":"OPF", this.toc);
+        const {toc, type} = await this.parseTOC(this.manifest, this.spine.toc)
+        this.toc = toc
+        this.toc_type = type;
         this.emit(EV.toc)
-        
         this.emit(EV.loaded)
     }
     async parseTOC(manifest:trait.Manifest, toc_id:string) {
-        const hasNCX = Boolean(toc_id)
-        let toc:trait.TableOfContents|undefined, 
-        tocElem = manifest[
-            (hasNCX) ? toc_id:"toc"
-        ]
-        
+        let toc:trait.TableOfContents|undefined;
+        let tocElem = manifest[toc_id] || manifest["toc"]
+        const hasNCX = Boolean(tocElem.id == "ncx")
         const IDs = {};
         Object.entries(manifest).map(([k, v]) => {
             IDs[v.href] = k;
@@ -240,7 +240,7 @@ export default class Epub extends EventEmitter {
         if (hasNCX) {
             const path = tocElem.href.split("/")
             path.pop();
-            toc = this.walkNavMap(
+            toc = walkNavMap(
                 {
                 branch: xml.ncx.navMap.navPoint,
                 path, 
@@ -256,137 +256,180 @@ export default class Epub extends EventEmitter {
         if(toc == undefined)
             throw new TypeError(`NO TOC found for id: ${toc_id}, input: ${manifest}`);
 
-        return {hasNCX, toc: matchTOCWithManifest(toc, manifest)}
+        return {type:tocElem.id, toc: matchTOCWithManifest(toc, manifest)}
     }
 
-    parseFlow(contents: any[]): Map<any, any> {
-        throw new Error("Method not implemented.");
+        /**
+     *  Parses the tree to see if there's an encryption file, signifying the presence of DRM
+     *  see: https://stackoverflow.com/questions/14442968/how-to-check-if-an-epub-file-is-drm-protected
+     **/
+    hasDRM () {
+        const drmFile = 'META-INF/encryption.xml';
+        return Object.keys(this.entries).includes(drmFile);
     }
 
-    parseManifest(items: any[]): trait.Manifest {
-        const manifest:trait.Manifest = {}
-        for(const item of items) {
-            const elem:trait.Item = item._attributes
-            elem.href = this.rootPath.alter(elem.href)
-            elem.id = dotToScore(elem.id)
-            manifest[elem.id] = elem
-        }
-
-        return manifest;
-    }
     /**
-     * Emits a "parsed-metadata" event
-     */
-     parseMetadata(_metadata:trait.Metadata) {
-        const metadata:trait.Metadata = {
-            creator:"",
-            UUID:"",
-            ISBN:""
-        };
-        for(const [k,v] of Object.entries(_metadata)) {
-            const 
-                keyparts = k.split(":"),
-                key = (keyparts[keyparts.length-1] || "").toLowerCase().trim(),
-                text = "" + v._text
-            ;
+    * Gets the text from a file based on id. 
+    * Replaces image and link URL's
+    * and removes <head> etc. elements. 
+    * If the chapterTransformer function is set, will pass it to the root element before returning.
+    * @param {string} id :Manifest id of the file
+    * @returns {Promise<string>} : Chapter text for mime type application/xhtml+xml
+    */
+    async getContent(id:string): Promise<string> {
+        if (Object.keys(this.cache.text).includes(id))
+            return this.cache.text[id];
+
+        let str = await this.getContentRaw(id);
+
+        // remove linebreaks (no multi line matches in JS regex!)
+        str = str.replace(/\r?\n/g, "\u0000");
+
+        // keep only <body> contents
+        str.replace(/<body[^>]*?>(.*)<\/body[^>]*?>/i, (_, d) => {
+            str = d.trim();
+        });
+        const fragment = document.createElement("template");
+        fragment.innerHTML =  str;
+        const frag = fragment.content;
+
+        removeChildsWith(frag, "script", "style");
             
-            switch (key) {
-                case "creator":
-                    if (Array.isArray(v)) {
-                        metadata.creator = v.map(item => {
-                            return item._text
-                        }).join(" | ")
-                    } else {
-                        metadata.creator = text
-                    }
-                    break;
-                case "identifier":
-                    if(Array.isArray(v)) {
-                        metadata.UUID = this.extractUUID(v[0]._text)
-                    } else if (v["opf:scheme"] == "ISBN") {
-                        metadata.ISBN = text;
-                    } else {
-                        metadata.UUID = this.extractUUID(text)
-                    }
-                    
-                    break;
-                default:
-                    metadata[key] = text;
+        /* const frag = ((text:string) => {
+            const p = new DOMParser()
+            let xmlD = p.parseFromString(text, "application/xhtml+xml");
+            const b = xmlD.querySelector("body")
+            if (b == null) {
+                throw new Error("No body tag for ID: " + id)
+            }
+
+            const f = document.createElement("template")
+            f.innerHTML = b.outerHTML;
+            removeChildsWith(b, "script", "style");
+            return f.content;
+        })(str); */
+
+        const onEvent = /^on.+/i;
+        //TODO: Convert for loops to .forEach for possible speed gains
+        for (const elem of frag.querySelectorAll("*")) {
+            for (const {name} of elem.attributes) {
+                if (onEvent.test(name))
+                    elem.removeAttribute(name);
             }
         }
 
-        return metadata;
+        //Replaces chapter links with the ids that can be used for referral in the TOC.
+        for (const a of frag.querySelectorAll("a")) {
+            a.href = a.href
+                .replace(/\.x?html?.+/, "") // Remove file extension
+                .replace(/(t|T)ext\//, "#") // Remove subpath "text" and add ID anchor.
+            const _id = a.hash.slice(1);
+
+            for (const k in this.manifest) {
+                if (k.includes(_id)) {
+                    a.href = '#' + k
+                    break;
+                }
+            }
+        }
+
+        //Replace SVG <image> with <img>
+        for (const svg of frag.querySelectorAll("svg")) {
+            const image = svg.querySelector("image")
+            if (!image)
+                continue;
+
+            const img = new Image();
+
+            //TS: null vs undefined
+            img.dataset.src = image.getAttribute("xlink:href") || undefined;
+            svg.parentNode?.replaceChild(img, svg)
+        }
+
+        for (const img of frag.querySelectorAll("img")) {
+            //TODO: Allow a default image to be used when no src.
+            const src = this.rootPath.alter(img.src || img.dataset.src ||"unknown")
+            img.dataset.src = src;
+            for(const _id in this.manifest) {
+                if(src == this.manifest[_id].href) {
+                    img.src = await this.getImage(_id);
+                }
+            }
+        }
+
+        /**TODOS:
+         * 1. Compare with UnaryFX instead
+         * 2. Replace str with the frag state before calling chapterTransformer
+         */
+        if (this.chapterTransformer instanceof Function) {
+            try {
+                str = this.chapterTransformer(frag).innerHTML;
+            } catch(e) {
+                console.log("Transform failed: ", id, e);
+            }
+        }
+
+        this.cache.setText(id, str)
+        return str
+        }
+
+    /**
+     * @param {string} id :Manifest id value for the content
+     * @returns {Promise<string>} : Raw Chapter text for mime type application/xhtml+xml
+     **/
+    async getContentRaw(id:string):Promise<string> {
+        const elem = this.manifest[id] || null
+        
+        if (elem == null)
+            return "";
+    
+        const allowedMIMETypes = /^(application\/xhtml\+xml|image\/svg\+xml)$/i;
+        const actual = elem["media-type"]
+        const wrong = !allowedMIMETypes.test(actual)
+        if (wrong)
+            throw MIMEError.format({id, expected:allowedMIMETypes.source, actual})
+
+        return (await this.readFile(elem.href)).data as string;
     }
 
     /**
-     * Helper function for parsing metadata
+     *  Return only images with mime type image
+     * @param {string} id of the image file in the manifest
+     * @returns {Promise<string>} Returns a promise of the image as a blob if it has a proper mime type.
      */
-    extractUUID(txt:string|any):string {
-        if (typeof txt == "string") {
-            txt = txt.toLowerCase()
-            let parts = txt.split(":")
-            if (parts.includes("uuid"))
-                return parts[parts.length - 1];
+    async getImage(id:string): Promise<string> {
+        if(this.cache.image[id])
+            return this.cache.image[id];
+
+        const item = this.manifest[id] || null;
+        const TE = new TypeError(`Undefined manifest entry: ${id}`)
+        if (item == null)
+            throw TE;
+
+        const expected = /^image\//i;
+        const actual = item["media-type"].trim();
+        const match = expected.test(actual)
+        if (!match) {
+            throw MIMEError.format({id, expected:expected.source, actual})
         }
-    
-        return ""
-    }
 
-    walkNavMap
-    ({branch, path, IDs, level = 0}:trait.Nav.Node, 
-    manifest:trait.Manifest
-    ) {
-        // don't go too deep
-        if (level > 7)
-            return undefined;
-        const output:trait.TableOfContents = new trait.TableOfContents();
-        
-        for (const part of toArray(branch)) {
-            let title = "";
-                
-            if (part.navLabel)
-                title = (part.navLabel.text._text || part.navLabel).trim()
+        const data = (await this.readFile(item.href, ChapterType.image)).data as Blob
 
-            let order = Number(part._attributes.playOrder) || 0
-
-            let href:string = part.content._attributes.src;
-
-            if (href == null)
-                continue;
-            else
-                href = href.trim();
-
-            let element:trait.Nav.Leaf = {
-                level: level,
-                order: order,
-                title: title,
-            };
-
-            element.href = path.concat([href]).join("/");
-
-            const id = IDs[element.href] || null
-
-            if (id == null) // use new one
-                element.id = (part._attributes.id || "").trim();
-            else { // link existing object
-                element = {... manifest[id], title, order, level};
-                element.id = element.id.replace('.','_')
-                element.navPoint = (part.navPoint) ?
-                    this.walkNavMap(
-                        {
-                            "branch": part.navPoint,
-                            path, 
-                            IDs,
-                            level: level + 1
-                        }
-                        , manifest
-                    )
-                    : undefined;
+        const r = new FileReader();
+        return new Promise<string>((resolve, reject) => {
+            r.onload = (e) => {
+                const res = e.target?.result || null;
+                if (res == null) {
+                    reject(r.error);
+                    return
+                }
+                this.cache.setImage(id, res.toString())
+                resolve(res.toString())
             }
 
-            output.set(element.id, element)
-        }
+            r.onerror = () => reject(r.error);
 
-        return output;
+            r.readAsDataURL(data)
+        })
     }
 }

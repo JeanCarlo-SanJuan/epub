@@ -6,6 +6,3 @@ export interface Chapter extends Item {
 }
 
 export class TableOfContents extends Map<string, Chapter> {};
-export interface ObjectTOC {
-    [key:string]: Chapter
-}
