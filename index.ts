@@ -2,22 +2,18 @@ import { EventEmitter } from "events"
 import * as zip from "@zip.js/zip.js"
 import convert from "xml-js";
 import removeChildsWith from "./removeChildsWithSelectors.js";
-import RootPath from "./RootPath.js";
+import RootPath from "./RootPath";
 import EV from "./EV"
 import * as trait from "./traits";
-import BookCache from "./BookCache.js";
-import { walkTOC } from "./walkTOC.js";
+import BookCache from "./BookCache";
 import { matchTOCWithManifest } from "./matchTOCWithManifest";
 import { parseSpine } from "./parseSpine";
-import { parseManifest } from "./parseManifest.js";
-import { parseMetadata } from "./parseMetadata.js";
-import { parseFlow } from "./parseFlow.js";
-import { walkNavMap } from "./walknavMap.js";
+import { parseManifest } from "./parseManifest";
+import { parseMetadata } from "./parseMetadata";
+import { parseFlow } from "./parseFlow";
+import { walkNavMap } from "./walknavMap";
+import { walkTOC } from "./walkTOC";
 import {MIMEError} from "./error/MIMEError"
-export enum ChapterType {
-    text,
-    image
-}
 
 export type UnaryFX<T, RT> = (v:T) => RT;
 export type maybeChapterTransformerSignature = null | UnaryFX<DocumentFragment, HTMLElement>;
@@ -63,9 +59,9 @@ export default class Epub extends EventEmitter {
     }
 
     /**
- *  Extracts the epub files from a zip archive, retrieves file listing
- *  and runs mime type check. May optionally set event listeners with a Map. Note that "this" will be bounded to the Epub instance so it is suggested to use the Function keyword instead of arrow funcs. 
- **/
+     *  Extracts the epub files from a zip archive, retrieves file listing
+     *  and runs mime type check. May optionally set event listeners with a Map. Note that "this" will be bounded to the Epub instance so it is suggested to use the Function keyword instead of arrow funcs. 
+     **/
     async open(load_events: Map<EV, Function> | null = null) {
         if (this.info.archive == null)
             return;
@@ -105,9 +101,13 @@ export default class Epub extends EventEmitter {
         this.getRootFiles()
     }
 
-    async readFile(name:string, writer:ChapterType=ChapterType.text):Promise<trait.LoadedEntry> {
+    async readFile(name:string, writer:trait.ChapterType=trait.ChapterType.text):Promise<trait.LoadedEntry> {
         const file = await this.getFileInArchive(name);
         const w = this.determineWriter(writer);
+
+        /* @TS-IGNORE 
+         * Though there's a warning, it does not show which var is the _object_ as such just ignore it for now. The code below _works_ as far as the previous js ver was.
+         */
         return {
             file, 
             data: await file.getData(w)
@@ -162,9 +162,9 @@ export default class Epub extends EventEmitter {
     /**
      * @returns the appropriate zip writer
      */
-    determineWriter(t:ChapterType) {
+    determineWriter(t:trait.ChapterType) {
         switch (t) {
-            case ChapterType.image:
+            case trait.ChapterType.image:
                 return new zip.BlobWriter("image/*")
             default:
                 return new zip.TextWriter("utf-8")
@@ -235,7 +235,9 @@ export default class Epub extends EventEmitter {
             IDs[v.href] = k;
         })
         
-        //TODO: error msg
+        /*TODOS
+         * 1. Decouple xml part so this fx could be declared in its own file.
+         */
         const xml = await this.zip2JS(tocElem.href);
         if (hasNCX) {
             const path = tocElem.href.split("/")
@@ -259,7 +261,7 @@ export default class Epub extends EventEmitter {
         return {type:tocElem.id, toc: matchTOCWithManifest(toc, manifest)}
     }
 
-        /**
+    /**
      *  Parses the tree to see if there's an encryption file, signifying the presence of DRM
      *  see: https://stackoverflow.com/questions/14442968/how-to-check-if-an-epub-file-is-drm-protected
      **/
@@ -364,7 +366,7 @@ export default class Epub extends EventEmitter {
      * @param {string} id :Manifest id value for the content
      * @returns {Promise<string>} : Raw Chapter text for mime type application/xhtml+xml
      **/
-    async getContentRaw(id:string):Promise<string> {
+    private async getContentRaw(id:string):Promise<string> {
         const elem = this.manifest[id] || null
         
         if (elem == null)
@@ -400,18 +402,20 @@ export default class Epub extends EventEmitter {
             throw MIMEError.format({id, expected:expected.source, actual})
         }
 
-        const data = (await this.readFile(item.href, ChapterType.image)).data as Blob
+        const data = (await this.readFile(item.href, trait.ChapterType.image)).data as Blob
 
         const r = new FileReader();
         return new Promise<string>((resolve, reject) => {
             r.onload = (e) => {
-                const res = e.target?.result || null;
+                let res = e.target?.result || null;
                 if (res == null) {
                     reject(r.error);
                     return
                 }
-                this.cache.setImage(id, res.toString())
-                resolve(res.toString())
+
+                res = res.toString()
+                this.cache.setImage(id, res)
+                resolve(res)
             }
 
             r.onerror = () => reject(r.error);

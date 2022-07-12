@@ -6,3 +6,8 @@ export interface Chapter extends Item {
 }
 
 export class TableOfContents extends Map<string, Chapter> {};
+
+export enum ChapterType {
+    text,
+    image
+}

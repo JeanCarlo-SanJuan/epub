@@ -1,8 +1,8 @@
 {
   "name": "@jcsj/epub",
-  "version": "1.5.2",
+  "version": "1.6.0",
   "description": "An Epub parser for the web.",
-  "main": "Epub",
+  "main": "./index",
   "type": "module",
   "keywords": [],
   "author": "Jean Carlo M. San Juan",
