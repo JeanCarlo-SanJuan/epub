@@ -1,13 +1,13 @@
 {
   "name": "@jcsj/epub",
-  "version": "1.5.1",
+  "version": "1.5.2",
   "description": "An Epub parser for the web.",
   "main": "Epub",
   "type": "module",
   "keywords": [],
   "author": "Jean Carlo M. San Juan",
   "dependencies": {
-    "@zip.js/zip.js": "^2.4.20",
+    "@zip.js/zip.js": "^2.5.16",
     "events": "^3.3.0",
     "sax": "^1.2.4",
     "stream": "^0.0.2",
@@ -15,6 +15,9 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/JeanCarlo-SanJuan/epub.git"
+    "url": "https://github.com/jcmsj/epub/epub.git"
+  },
+  "devDependencies": {
+    "@types/events": "^3.0.0"
   }
 }

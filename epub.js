@@ -119,10 +119,10 @@ export class Epub extends EventEmitter {
      */
      determineWriter(w) {
         switch(w) {
-            case "text":
-                return new zip.TextWriter()
             case "blob":
-                return new zip.BlobWriter() 
+                return new zip.BlobWriter("image/*") 
+            default:
+                return new zip.TextWriter()
         }
     }
 
@@ -133,9 +133,9 @@ export class Epub extends EventEmitter {
      * @returns {Promise<{object, object}>
      */
     async getFileContents(name, writer = "text") {
-        const f = this.getFileInArchive(name)
+        const file = this.getFileInArchive(name)
         const w = this.determineWriter(writer)
-        return {file:f, data: await f.getData(w)}
+        return {file, data: await file.getData(w)}
     }
     /**
      *  Checks if there's a file called "mimetype" and that it's contents
@@ -344,21 +344,20 @@ export class Epub extends EventEmitter {
      * Read : https://docs.fileformat.com/ebook/ncx/
      * 
      * @param {object} manifest
-     * @param {object} _toc
+     * @param {string} toc_id
      */
-    async parseTOC(manifest, _toc) {
-        const hasNCX = Boolean(_toc)
-        let toc, tocElem;
-
+    async parseTOC(manifest, toc_id) {
+        const hasNCX = Boolean(toc_id)
+        let toc, 
         tocElem = manifest[
-            (hasNCX) ? _toc:"toc"
+            (hasNCX) ? toc_id:"toc"
         ]
         
         const IDs = {};
         
-        for (const [k, v] of Object.entries(manifest)) {
-            IDs[v.href] = k
-        }
+        Object.entries(manifest).map(([k, v]) => {
+            IDs[v.href] = k;
+        })
         const {data} = await this.getFileContents(tocElem.href)
         if(!data)
             this.error("No TOC!!!");
@@ -396,7 +395,7 @@ export class Epub extends EventEmitter {
                 continue
             }
 
-            let href;
+            let href = elem.href;
             //Remove white space and page jumps
             if (elem.href.includes("#"))
                 [href] = elem.href.trim().split("#", 1)
@@ -451,11 +450,11 @@ export class Epub extends EventEmitter {
      * @returns {Map<string, object>}
      */
     walkNavMap({branch, path, IDs, level = 0}, manifest) {
+        const output = new Map();
         // don't go too deep
         if (level > 7)
-            return [];
+            return output;
 
-        const output = new Map();
         for (const part of toArray(branch)) {
             let title = "";
                 
