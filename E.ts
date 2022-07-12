@@ -281,21 +281,8 @@ export default class Epub extends EventEmitter {
             return this.cache.text[id];
 
         let str = await this.getContentRaw(id);
-
-        // remove linebreaks (no multi line matches in JS regex!)
-        str = str.replace(/\r?\n/g, "\u0000");
-
-        // keep only <body> contents
-        str.replace(/<body[^>]*?>(.*)<\/body[^>]*?>/i, (_, d) => {
-            str = d.trim();
-        });
-        const fragment = document.createElement("template");
-        fragment.innerHTML =  str;
-        const frag = fragment.content;
-
-        removeChildsWith(frag, "script", "style");
             
-        /* const frag = ((text:string) => {
+        const frag = ((text:string) => {
             const p = new DOMParser()
             let xmlD = p.parseFromString(text, "application/xhtml+xml");
             const b = xmlD.querySelector("body")
@@ -307,7 +294,7 @@ export default class Epub extends EventEmitter {
             f.innerHTML = b.outerHTML;
             removeChildsWith(b, "script", "style");
             return f.content;
-        })(str); */
+        })(str);
 
         const onEvent = /^on.+/i;
         //TODO: Convert for loops to .forEach for possible speed gains
