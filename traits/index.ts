@@ -1,5 +1,5 @@
 export type {Info} from "./FileInfo"
-export type {Spine, SpineItem} from "./Spine"
+export type {Spine, RawSpine} from "./Spine"
 export type {Attribute} from "./Attribute"
 export type  {Item, Manifest} from "./ManifestItem"
 export type {LoadedEntry} from "./LoadedEntry"

@@ -1,8 +1,8 @@
 import { dotToScore } from "./dotToScore";
 import toArray from "./toArray";
-import { SpineItem, Thing, Spine } from "./traits";
+import { RawSpine, Thing, Spine } from "./traits";
 
-export function parseSpine({itemref, _attributes}:SpineItem, manifest:Thing): Spine {
+export function parseSpine({itemref, _attributes}:RawSpine, manifest:Thing): Spine {
     const spine:Spine =  {
         toc: "ncx",
         contents: [],

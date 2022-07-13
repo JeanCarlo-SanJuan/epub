@@ -10,6 +10,6 @@ export interface Spine {
     }
 }
 
-export interface SpineItem extends Attribute {
+export interface RawSpine extends Attribute {
     itemref: Thing[]
 }
