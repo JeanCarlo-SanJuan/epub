@@ -7,11 +7,11 @@ export function matchTOCWithManifest(toc:TableOfContents, manifest:Manifest) {
         if (elem.href.includes(id)) {
             continue
         }
-
-        let href = elem.href;
-        //Remove white space and page jumps
-        if (elem.href.includes("#"))
-            [href] = elem.href.trim().split("#", 1)
+        
+        let [href] = elem.href
+            //Removes l/r white space and anchor
+            .trim()
+            .split("#", 1);
 
         //TODO: Optimize
         for (const key in manifest) {
