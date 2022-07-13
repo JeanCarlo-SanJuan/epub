@@ -1,5 +1,4 @@
-import { Item } from "./traits";
-import { Flow } from "./traits/Flow";
+import { Item, Flow } from "./traits";
 export function parseFlow(contents:Item[]): Flow {
     const flow = new Flow()
     contents.map(item =>
