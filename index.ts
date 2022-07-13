@@ -15,6 +15,7 @@ import { walkNavMap } from "./walknavMap";
 import { walkTOC } from "./walkTOC";
 import {MIMEError} from "./error/MIMEError"
 
+export {EV} from "./EV"
 export type UnaryFX<T, RT> = (v:T) => RT;
 export type maybeChapterTransformerSignature = null | UnaryFX<DocumentFragment, HTMLElement>;
 export default class Epub extends EventEmitter {

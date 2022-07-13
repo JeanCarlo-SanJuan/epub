@@ -1,4 +1,4 @@
-enum EV {
+export enum EV {
     root="root",
     manifest="manifest",
     spine="spine",

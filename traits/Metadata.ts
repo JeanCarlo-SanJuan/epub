@@ -3,4 +3,8 @@ export interface Metadata {
     UUID:string,
     ISBN:string
     [key:string]:any
+    language:string,
+    date:string,
+    description?:string,
+    subject?:string
 }

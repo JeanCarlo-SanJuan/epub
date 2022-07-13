@@ -1,51 +1,49 @@
-# My version achieves the same results but with better readability by leveraging modern JS techniques and features like the following:
-1. Foreach loops
-2. Async functions
-3. Promises.
-
-# Dependency change:
-1. adm-zip | zipfile -> @zip.js/zip.js
-2. xml2js -> xml-js
-
-Note: I didn't need to change dependencies but my lack of knowledge of handling node packages caused me to do so (I'll explain in the future). 
-I only realized my mistake when I was finished rewriting it so of course I will not do so again just to use the same libraries.
 
 
 **NB!** Only ebooks in UTF-8 are currently supported!.
 
-## Usage
+## Usage 
 
 ```js
 import Epub from '@jcsj/epub'
 const epub = new Epub(file)
 ```
-
 Where
   * **file** is an instance of the File class of an EPUB file.
 
-  <details>
-  <summary>
-  Expand to read temporarily removed features.
-  </summary>
-  * **imageWebRoot** is the prefix for image URL's. If it's */images/* then the actual URL (inside img tags) is going to be */images/IMG_ID/IMG_FILENAME*, `IMG_ID` can be used to fetch the image form the ebook with `getImage`. Default: `/images/`
-  * **chapterWebRoot** is the prefix for chapter URL's. If it's */chapter/* then the actual URL (inside chapter anchor tags) is going to be */chapters/CHAPTER_ID/CHAPTER_FILENAME*, `CHAPTER_ID` can be used to fetch the image form the ebook with `getChapter`. Default: `/links/`
-  </details>
-
 Before the contents of the ebook can be read, it must be opened (`Epub` is an `EventEmitter`).
 
+As of 1.6, one should use the EV enum.
+It represents the events that will be fired as parts of the book is parsed. Epub readers may use it to speed-up preview.
 ```js
-epub.on('loaded', function() {
-  // epub is initialized now
-  console.log(epub.metadata.title)
+import {EV} from "@jcsj/epub"
 
-  var text = epub.getContent('chapter_id')
+epub.on(EV.metadata, async()=> {
+  console.log(epub.metadata.title)
+})
+
+epub.on(EV.loaded, async() => {
+  let text = await epub.getContent('chapter_id')
 })
 
 epub.open()
 ```
 
-## metadata
+## Item
+An object/interface that contains basic file info from the archive. It is the most important structure as the manifest, flow, toc uses or extends it.
+It has the following propperties:
+1. **id** - Unique id of the file. Most methods use this as a parameter.
+1. **href** - path of the file if it were in a filesystem.
+1. **media-type** - The type of the file.
 
+## manifest
+Contains all the files of the epub archive as an object whose values implement *Item*.
+
+```js
+epub.manifest
+```
+
+## metadata
 Property of the *epub* object that holds several metadata fields about the book.
 
 ```js
@@ -53,21 +51,22 @@ epub.metadata
 ```
 
 Available fields:
-
   * **creator** Author of the book (if multiple authors, will be seperated with '|') (*Lewis Carroll*)
-  * **creatorFileAs** Author name on file (*Carroll, Lewis*)
   * **title** Title of the book (*Alice's Adventures in Wonderland*)
-  * **language** Language code (*en* or *en-us* etc.)
-  * **subject** Topic of the book (*Fantasy*)
   * **date** creation of the file (*2006-08-12*)
-  * **description**
+  * **language** Language code (*en* or *en-us* etc.)
+  * **subject?** Topic of the book (*Fantasy*)
+  * **description?**
+  * **UUID?** UUID string
+  * **ISBN?** ISBN string
 
 ## flow
 
-*flow* is a property of the *epub* object and holds the actual list of chapters (TOC is just an indication and can link to a # url inside a chapter file)
+An instance of Flow class which is a Map whose values are implementations of the Item interface. It is basically a slice of **manifest**. The values hold the actual list of chapters (TOC is just an indication and can link to a # url inside a chapter file).
 
 ```js
-epub.flow.forEach(chapter => {
+epub.flow.forEach([key, value] => {
+  //Note: key == chapter.id
     console.log(chapter.id)
 })
 ```
@@ -75,22 +74,24 @@ epub.flow.forEach(chapter => {
 Chapter `id` is needed to load the chapters with `getContent`
 
 ## toc
-*toc* is a property of the *epub* object and indicates a list of titles/urls for the TOC. Actual chapter and it's ID needs to be detected with the `href` property
+It is an instance of **TableOfContents** that extends **Map** whose values implement **Chapter** . It is basically a slice of **Flow**. It indicates a list of titles/urls for the TOC. Actual chapter(the file) is accessed with the `href` property.
 
-## async getChapter(chapter_id)
+## Chapter
+An extension of **Item** with the following additional properties:
+1. **order** - int
+2. **title** - string
 
-<details>
-<summary>
-Loads chapter text from the ebook and alters it. Additionally, the result is cached when an ID is first encountered.
-</summary>
-1. Keeps only body
+## async getContent(chapter_id)
+
+Loads chapter text from the ebook as a promise. It is altered to be web safe. Additionally, the result is cached.
+1. Keeps only the body tag.
 1. Removes scripts, styles, and event handlers
 1. Converts SVG IMG as a normal img tag.
 1. Replaces the original image.src with the embedded base64.
-</details>
+1. Previous src is saved in dataset.src.
 
 ```js
-await epub.getContent('chapter1')
+let text = await epub.getContent('chapter1')
 ```
 
 ## async getContentRaw(chapter_id)
@@ -98,21 +99,43 @@ await epub.getContent('chapter1')
 Load raw chapter text from the ebook.
 
 ## async getImage(image_id)
-Load's image as a BLOB from the ebook. Additionally, the result is cached the first an ID is encountered.
+Load's image as a base64 string from the ebook. This can be used as the src of an HTML img element. Additionally, the result is cached. 
 ```js
-await epub.getImage('image1')
+const coverImage = await epub.getImage('cover');
+
+//Example application:
+const imageElement = document.createElement("img")
+imageElement.src = coverImage
+document.body.appendChild(imageElement)
 ```
 
-## async getFileContents(id, writer)
-Loads a file's contents from the ebook as either TEXT or blob.
-
+## async readFile(id, writer="text")
+Loads a file's content from the ebook as an object with the following properties: 
+1. **file** - zip.Entry
+1. **data** - string.
+* the writer determines the data's string representation:
+  1. "text" for chapter data in utf-8.
+  1. "image" for base64 string of an image.
 ```js
-const text = await epub.getFile("name")
+const {file, data} = await epub.readFile("toc")
+console.log(data)
 ```
 
-## getFileInArchive(id)
-Loads a file from the ebook as a Buffer.
+## async getFileInArchive(id)
+Loads a file from the ebook as an object.
+For *TS*: It implements the zip.Entry interface.
 
 ```js
-epub.getFile("name")
+let tocEntry = await epub.getFileInArchive("toc")
 ```
+
+# Changes against [Julien-c's epub](https://github.com/julien-c/epub)
+
+## Dependencies:
+1. adm-zip | zipfile -> @zip.js/zip.js
+2. xml2js -> xml-js
+
+## Implementation:
+1. Async-await based.
+1. Uses built-in `DOM` parsers instead of `regex` for getting content.
+1. **Flow** and **TOC** are instances of *Map* instead of being just an *Object*.
