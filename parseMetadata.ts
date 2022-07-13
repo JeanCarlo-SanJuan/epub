@@ -1,45 +1,47 @@
-import { Metadata } from "./traits";
-import {extractUUID} from "./extractUUID"
-    /**
-     * Emits a "parsed-metadata" event
-     */
-export function parseMetadata(_metadata:Metadata) {
-        const metadata:Metadata = {
-            creator:"",
-            UUID:"",
-            ISBN:""
-        };
-        for(const [k,v] of Object.entries(_metadata)) {
-            const 
-                keyparts = k.split(":"),
-                key = (keyparts[keyparts.length-1] || "").toLowerCase().trim(),
-                text = "" + v._text
-            ;
-            
-            switch (key) {
-                case "creator":
-                    if (Array.isArray(v)) {
-                        metadata.creator = v.map(item => {
-                            return item._text
-                        }).join(" | ")
-                    } else {
-                        metadata.creator = text
-                    }
-                    break;
-                case "identifier":
-                    if(Array.isArray(v)) {
-                        metadata.UUID = extractUUID(v[0]._text)
-                    } else if (v["opf:scheme"] == "ISBN") {
-                        metadata.ISBN = text;
-                    } else {
-                        metadata.UUID = extractUUID(text)
-                    }
-                    
-                    break;
-                default:
-                    metadata[key] = text;
-            }
-        }
+import { Metadata, Thing } from "./traits";
+import { extractUUID } from "./extractUUID"
 
-        return metadata;
-    }
+export function parseMetadata(rawMetadata: Metadata):Metadata {
+    const md: Metadata = {
+        creator: "unknown",
+        UUID: "",
+        ISBN: "",
+        language: "en",
+        date: "unknown"
+    };
+
+    Object.entries(rawMetadata).forEach(([k,v]) => {
+        const
+        keyparts = k.split(":"),
+        key = (keyparts[keyparts.length - 1] || "").toLowerCase().trim(),
+        text = "" + v._text
+        ;
+
+        switch (key) {
+            case "creator":
+                md.creator = Array.isArray(v) 
+                ? combineCreators(v):text
+                break;
+            case "identifier":
+                if (Array.isArray(v)) {
+                    md.UUID = extractUUID(v[0]._text)
+                } else if (v["opf:scheme"] == "ISBN") {
+                    md.ISBN = text;
+                } else {
+                    md.UUID = extractUUID(text)
+                }
+
+                break;
+            default:
+                md[key] = text;
+        }
+    })
+
+    return md;
+}
+
+function combineCreators(v:Thing[]) {
+    return v
+        .map(({_text}) =>_text)
+        .join(" | ")
+}

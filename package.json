@@ -1,6 +1,6 @@
 {
   "name": "@jcsj/epub",
-  "version": "1.6.12",
+  "version": "1.6.2",
   "description": "An Epub parser for the web.",
   "main": "./index",
   "type": "module",

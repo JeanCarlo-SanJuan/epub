@@ -1,22 +1,20 @@
 import { dotToScore } from "./dotToScore";
 import toArray from "./toArray";
-import { RawSpine, Thing, Spine } from "./traits";
-
-export function parseSpine({itemref, _attributes}:RawSpine, manifest:Thing): Spine {
-    const spine:Spine =  {
-        toc: "ncx",
+import { RawSpine, Thing, Spine, Item } from "./traits";
+export function parseSpine({itemref, _attributes}:RawSpine, rawManifest:Thing): Spine {
+    const s:Spine =  {
+        toc: "ncx", //TODO: move toc type identification here
         contents: [],
         _attributes
     }
+    
     if (itemref) {
         itemref = toArray(itemref)
-
-        for (const {_attributes:atrs} of itemref) {
-            const elem:Thing & {id:string} = manifest[dotToScore(atrs.idref)];
-            elem.id = dotToScore(elem.id)
-            spine.contents.push(elem)
-        }
+        s.contents = itemref.map(({_attributes:atrs}) => {
+            const l:Item = rawManifest[dotToScore(atrs.idref)];
+            l.id = dotToScore(l.id)
+            return l
+        })
     }
-
-    return spine; 
+    return s; 
 }

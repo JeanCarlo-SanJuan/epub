@@ -1,15 +1,15 @@
 import { dotToScore } from "./dotToScore"
-import { Manifest, Item } from "./traits"
+import { Manifest, Item, Thing } from "./traits"
 import RootPath from "./RootPath"
 
-export function parseManifest(items: any[], rootPath:RootPath): Manifest {
-    const manifest:Manifest = {}
-    for(const item of items) {
-        const elem:Item = item._attributes
-        elem.href = rootPath.alter(elem.href)
-        elem.id = dotToScore(elem.id)
-        manifest[elem.id] = elem
-    }
+export function parseManifest(items: Thing[], rootPath:RootPath): Manifest {
+    const m:Manifest = {}
+    items.map(({_attributes}) => {
+        const l:Item = _attributes
+        l.href = rootPath.alter(l.href)
+        l.id = dotToScore(l.id)
+        m[l.id] = l
+    })
 
-    return manifest;
+    return m;
 }

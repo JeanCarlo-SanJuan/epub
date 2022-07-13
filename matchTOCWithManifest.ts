@@ -2,12 +2,10 @@ import { Manifest } from "./traits";
 import { TableOfContents } from "./traits/TOC";
 
 export function matchTOCWithManifest(toc:TableOfContents, manifest:Manifest) {
-    for (const [id, elem] of toc) {
+    toc.forEach((elem, id) => {
+        if (elem.href.includes(id))
+            return;
 
-        if (elem.href.includes(id)) {
-            continue
-        }
-        
         let [href] = elem.href
             //Removes l/r white space and anchor
             .trim()
@@ -20,7 +18,7 @@ export function matchTOCWithManifest(toc:TableOfContents, manifest:Manifest) {
                 break;
             }
         }
-    }
+    })
 
     return toc
 }
