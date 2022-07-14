@@ -17,7 +17,11 @@ import {MIMEError} from "./error/MIMEError"
 
 export {EV} from "./EV"
 export type UnaryFX<T, RT> = (v:T) => RT;
-export type maybeChapterTransformerSignature = null | UnaryFX<DocumentFragment, HTMLElement>;
+export type maybeChapterTransformer = null | UnaryFX<DocumentFragment, HTMLElement>;
+
+export type EPUBProgressEvents = {
+    [key in EV]?: Function;
+};
 export default class Epub extends EventEmitter {
     info: trait.Info = {
         archive:null,
@@ -31,7 +35,7 @@ export default class Epub extends EventEmitter {
     flow = new trait.Flow();
     toc = new trait.TableOfContents()
     toc_type:string;
-    chapterTransformer: maybeChapterTransformerSignature;
+    chapterTransformer: maybeChapterTransformer;
     cache = new BookCache()
     reader: zip.ZipReader<Blob>
     entries: zip.Entry[]
@@ -45,7 +49,7 @@ export default class Epub extends EventEmitter {
 
     constructor
     (archive: File, 
-    chapterTransformer: maybeChapterTransformerSignature  = null) {
+    chapterTransformer: maybeChapterTransformer  = null) {
         super();
         this.info.archive = archive
         this.chapterTransformer = chapterTransformer;
@@ -61,19 +65,18 @@ export default class Epub extends EventEmitter {
 
     /**
      *  Extracts the epub files from a zip archive, retrieves file listing
-     *  and runs mime type check. May optionally set event listeners with a Map. Note that "this" will be bounded to the Epub instance so it is suggested to use the Function keyword instead of arrow funcs. 
+     *  and runs mime type check. May optionally set event listeners with an object whose keys denotes the 'event name' while the value must be a function. "this" shall be bounded to the 'Epub' instance. 
      **/
-    async open(load_events: Map<EV, Function> | null = null) {
+    async open(p: EPUBProgressEvents = {}) {
         if (this.info.archive == null)
             return;
 
         this.reader = new zip.ZipReader(new zip.BlobReader(this.info.archive))
 
-        if (load_events instanceof Map) {
-            for (const [ev, cb] of load_events) {
-                this.on(ev, cb.bind(this))
-            }
-        }
+        Object.entries(p)
+        .forEach(([ev, cb]) => 
+            this.on(ev, cb.bind(this))
+        )
 
         // get all entries from the zip
         this.entries = await this.reader.getEntries();
