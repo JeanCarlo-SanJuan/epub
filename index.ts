@@ -154,8 +154,8 @@ export default class Epub extends EventEmitter {
         if (this.info.rootName == null)
             return;
 
-        const maybeLoadedEntry = await this.readFile(this.info.rootName)
-        this.rootXML = this.xml2js(maybeLoadedEntry.data.toString())
+        const entry = await this.readFile(this.info.rootName)
+        this.rootXML = this.xml2js(entry.data.toString())
         this.emit(EV.root)
     }
 
@@ -381,7 +381,7 @@ export default class Epub extends EventEmitter {
         if (wrong)
             throw MIMEError.format({id, expected:allowedMIMETypes.source, actual})
 
-        return (await this.readFile(elem.href)).data as string;
+        return (await this.readFile(elem.href)).data.toString();
     }
 
     /**
