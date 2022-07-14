@@ -1,2 +1,3 @@
 import { Item } from "./ManifestItem";
-export class Flow extends Map<string, Item> {};
+import {EnhancedMap} from "@jcsj/arraymap"
+export class Flow extends EnhancedMap<string, Item> {};

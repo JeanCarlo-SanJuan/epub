@@ -62,7 +62,7 @@ Available fields:
 
 ## flow
 
-An instance of Flow class which is a Map whose values are implementations of the Item interface. It is basically a slice of **manifest**. The values hold the actual list of chapters (TOC is just an indication and can link to a # url inside a chapter file).
+An instance of Flow class which is a Map whose values implement `Item`. It is basically a slice of **manifest**. The values hold the actual list of chapters (TOC is just an indication and can link to a # url inside a chapter file).
 
 ```js
 epub.flow.forEach([key, value] => {

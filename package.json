@@ -1,12 +1,19 @@
 {
   "name": "@jcsj/epub",
-  "version": "1.6.2",
+  "version": "1.7.0",
   "description": "An Epub parser for the web.",
   "main": "./index",
   "type": "module",
-  "keywords": ["books", "ebook", "epub", "epub-parser", "parser"],
+  "keywords": [
+    "books",
+    "ebook",
+    "epub",
+    "epub-parser",
+    "parser"
+  ],
   "author": "Jean Carlo M. San Juan",
   "dependencies": {
+    "@jcsj/arraymap": "^0.0.3",
     "@zip.js/zip.js": "^2.5.17",
     "events": "^3.3.0",
     "sax": "^1.2.4",
