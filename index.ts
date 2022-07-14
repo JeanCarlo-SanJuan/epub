@@ -1,7 +1,6 @@
 import { EventEmitter } from "events"
 import * as zip from "@zip.js/zip.js"
 import convert from "xml-js";
-import removeChildsWith from "./removeChildsWithSelectors.js";
 import RootPath from "./RootPath";
 import EV from "./EV"
 import * as trait from "./traits";
@@ -14,6 +13,10 @@ import { parseFlow } from "./parseFlow";
 import { walkNavMap } from "./walknavMap";
 import { walkTOC } from "./walkTOC";
 import {MIMEError} from "./error/MIMEError"
+import { xmlToFragment } from "./xmlToFragment.js";
+import { removeInlineEvents } from "./removeInlineEvents.js";
+import { replaceSVGImageWithIMG } from "./replaceSVGWithIMG.js";
+import { matchAnchorsWithTOC } from "./matchAnchorsWithTOC.js";
 
 export {EV} from "./EV"
 export type UnaryFX<T, RT> = (v:T) => RT;
@@ -283,58 +286,11 @@ export default class Epub extends EventEmitter {
             return this.cache.text[id];
 
         let str = await this.getContentRaw(id);
-            
-        const frag = ((text:string) => {
-            const p = new DOMParser()
-            let xmlD = p.parseFromString(text, "application/xhtml+xml");
-            const b = xmlD.querySelector("body")
-            if (b == null) {
-                throw new Error("No body tag for ID: " + id)
-            }
-
-            const f = document.createElement("template")
-            f.innerHTML = b.outerHTML;
-            removeChildsWith(b, "script", "style");
-            return f.content;
-        })(str);
-
-        const onEvent = /^on.+/i;
-        //TODO: Convert for loops to .forEach for possible speed gains
-        for (const elem of frag.querySelectorAll("*")) {
-            for (const {name} of elem.attributes) {
-                if (onEvent.test(name))
-                    elem.removeAttribute(name);
-            }
-        }
-
-        //Replaces chapter links with the ids that can be used for referral in the TOC.
-        for (const a of frag.querySelectorAll("a")) {
-            a.href = a.href
-                .replace(/\.x?html?.+/, "") // Remove file extension
-                .replace(/(t|T)ext\//, "#") // Remove subpath "text" and add ID anchor.
-            const _id = a.hash.slice(1);
-
-            for (const k in this.manifest) {
-                if (k.includes(_id)) {
-                    a.href = '#' + k
-                    break;
-                }
-            }
-        }
-
-        //Replace SVG <image> with <img>
-        for (const svg of frag.querySelectorAll("svg")) {
-            const image = svg.querySelector("image")
-            if (!image)
-                continue;
-
-            const img = new Image();
-
-            //TS: null vs undefined
-            img.dataset.src = image.getAttribute("xlink:href") || undefined;
-            svg.parentNode?.replaceChild(img, svg)
-        }
-
+        const frag = xmlToFragment(str, id);
+        removeInlineEvents(frag);
+        matchAnchorsWithTOC(frag, this.toc)
+        replaceSVGImageWithIMG(frag)
+        
         for (const img of frag.querySelectorAll("img")) {
             //TODO: Allow a default image to be used when no src.
             const src = this.rootPath.alter(img.src || img.dataset.src ||"unknown")
