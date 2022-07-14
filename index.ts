@@ -22,6 +22,10 @@ export type maybeChapterTransformer = null | UnaryFX<DocumentFragment, HTMLEleme
 export type EPUBProgressEvents = {
     [key in EV]?: Function;
 };
+
+export class UnknownItem extends TypeError {
+    name="UnknownItem"
+}
 export default class Epub extends EventEmitter {
     info: trait.Info = {
         archive:null,
@@ -53,14 +57,6 @@ export default class Epub extends EventEmitter {
         super();
         this.info.archive = archive
         this.chapterTransformer = chapterTransformer;
-    }
-
-    error(msg: string) {
-        this.throw(new Error(msg))
-    }
-
-    throw(err: Error) {
-        this.emit("error", err)
     }
 
     /**
@@ -125,9 +121,9 @@ export default class Epub extends EventEmitter {
      *  On success, calls the rootfile parser
      **/
     async getRootFiles() {
-        if (this.info== undefined) {
-            this.error("No container file");
-        }
+        if (this.info== undefined)
+            throw TypeError("No container file");
+
         const ID = "meta-inf/container.xml"
         const maybeContainer = await this.readFile(ID);
 
@@ -139,7 +135,7 @@ export default class Epub extends EventEmitter {
         )
 
         if (!container.rootfiles || !container.rootfiles.rootfile) 
-            this.error("No rootfiles found");
+            throw TypeError("No rootfiles found");
 
         const { "full-path": fullPath, "media-type": mediaType }:{"full-path":string, "media-type": string} =
             container.rootfiles.rootfile._attributes;
@@ -366,16 +362,19 @@ export default class Epub extends EventEmitter {
         return str
         }
 
+    searchManifestOrPanic(id:string) {
+        const l = this.manifest[id] || null
+        if (l == null)
+            throw Error(`Unkown manifest item: ${id}`)
+
+        return l;
+    }
     /**
      * @param {string} id :Manifest id value for the content
      * @returns {Promise<string>} : Raw Chapter text for mime type application/xhtml+xml
      **/
     private async getContentRaw(id:string):Promise<string> {
-        const elem = this.manifest[id] || null
-        
-        if (elem == null)
-            return "";
-    
+        const elem = this.searchManifestOrPanic(id)
         const allowedMIMETypes = /^(application\/xhtml\+xml|image\/svg\+xml)$/i;
         const actual = elem["media-type"]
         const wrong = !allowedMIMETypes.test(actual)
@@ -394,11 +393,7 @@ export default class Epub extends EventEmitter {
         if(this.cache.image[id])
             return this.cache.image[id];
 
-        const item = this.manifest[id] || null;
-        const TE = new TypeError(`Undefined manifest entry: ${id}`)
-        if (item == null)
-            throw TE;
-
+        const item = this.searchManifestOrPanic(id)
         const expected = /^image\//i;
         const actual = item["media-type"].trim();
         const match = expected.test(actual)
