@@ -11,8 +11,14 @@ export const raw: { _attributes: Item }[] = [
             id: "text.xhtml",
             href: "oebps/Text/text.xhtml",
             "media-type": "application/xhtml+xml"
-        }
-    }]
+        }},
+    {_attributes:
+        {
+            id: "sample-1.xhtml",
+            href: "oebps/Text/sample-1.xhtml",
+            "media-type": "application/xhtml+xml"
+        }},
+    ]
 
 export const parsed: Manifest = {
     "Cover_jpg": {
@@ -25,5 +31,10 @@ export const parsed: Manifest = {
         "id": "text_xhtml",
         "href": "oebps/Text/text.xhtml",
         "media-type": "application/xhtml+xml"
+    },
+    "sample-1_xhtml": {
+        id:"sample-1_xhtml",
+        href:"oebps/Text/sample-1.xhtml",
+        "media-type":"application/xhtml+xml"
     }
 }

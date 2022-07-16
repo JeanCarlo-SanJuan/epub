@@ -10,9 +10,14 @@ export function parseSpine({itemref, _attributes}:RawSpine, rawManifest:Thing): 
     
     if (itemref) {
         itemref = toArray(itemref)
-        s.contents = itemref.map(({_attributes:atrs}) => {
+        s.contents = itemref.map(({_attributes:atrs}, index) => {
             const l:Item = rawManifest[dotToScore(atrs.idref)];
-            l.id = dotToScore(l.id)
+
+            if (l.hasOwnProperty("id")) {
+                l.id = dotToScore(l.id)
+            } else {
+                throw new TypeError(`Missing id at index ${index} | item, ${l}`, )
+            }
             return l
         })
     }

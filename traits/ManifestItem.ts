@@ -1,4 +1,4 @@
-export interface Item {
+export interface Item extends Object{
     id:string,
     href:string,
     "media-type":string,

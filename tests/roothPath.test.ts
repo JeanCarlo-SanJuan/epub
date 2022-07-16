@@ -5,13 +5,13 @@ describe("using RootPath", () => {
         expect(r.rootPath).toBeTruthy()
     })
 
-    it("appends-fullPath", () => {
+    it("appends fullPath", () => {
         expect(r.rootPath.alter(r.filePath)).toBe(r.expected)
     })
-    it("removes-parent-dir", () => {
+    it("removes parent dir", () => {
         expect(r.rootPath.alter("../" +  r.filePath)).toBe(r.expected)
     })
-    it("removes-origin", () => {
+    it("removes origin", () => {
         expect(r.rootPath.alter(window.location.origin + "/" +r.filePath)).toBe(r.expected)
     })
 })
