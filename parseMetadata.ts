@@ -1,7 +1,8 @@
 import { Metadata, Thing } from "./traits";
 import { extractUUID } from "./extractUUID"
+import {Attribute} from "./traits/Attribute"
 
-export function parseMetadata(rawMetadata: Metadata):Metadata {
+export function parseMetadata(rawMetadata: Thing):Metadata {
     const md: Metadata = {
         creator: "unknown",
         UUID: "",
@@ -10,30 +11,40 @@ export function parseMetadata(rawMetadata: Metadata):Metadata {
         date: "unknown"
     };
 
-    Object.entries(rawMetadata).forEach(([k,v]) => {
+    Object.entries(rawMetadata).forEach(([k,v]:[k:string, v:Thing]) => {
         const
         keyparts = k.split(":"),
-        key = (keyparts[keyparts.length - 1] || "").toLowerCase().trim(),
-        text = "" + v._text
+        key = (keyparts[keyparts.length - 1] || "").toLowerCase().trim()
         ;
-
-        switch (key) {
-            case "creator":
-                md.creator = Array.isArray(v) 
-                ? combineCreators(v):text
-                break;
-            case "identifier":
-                if (Array.isArray(v)) {
-                    md.UUID = extractUUID(v[0]._text)
-                } else if (v["opf:scheme"] == "ISBN") {
-                    md.ISBN = text;
-                } else {
-                    md.UUID = extractUUID(text)
-                }
-
-                break;
-            default:
-                md[key] = text;
+        if (!v.hasOwnProperty("_text")) {
+            md[key] = v;
+        } else {
+            const text = "" + v._text
+            switch (key) {
+                case "creator":
+                    md.creator = Array.isArray(v) 
+                    ? combineCreators(v):text
+                    break;
+                case "identifier":
+                    if (Array.isArray(v)) {
+                        md.UUID = extractUUID(v[0]._text)
+                    } else {
+                        const id = v["opf:scheme"];
+                        switch(id) {
+                            case 'ISBN':
+                                md.ISBN = text;
+                            break;
+                            case "URI":
+                                md.URI = text;
+                            break;
+                            default:
+                                md.UUID = extractUUID(text)
+                            break;
+                        }
+                    }
+                default:
+                    md[key] = text;
+            }
         }
     })
 

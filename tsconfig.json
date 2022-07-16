@@ -1,0 +1,10 @@
+{
+    "compilerOptions": {
+        "esModuleInterop": true,
+        "lib": [
+            "DOM",
+            "ES2017"
+        ]
+    },
+    
+}

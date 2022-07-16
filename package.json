@@ -4,6 +4,9 @@
   "description": "An Epub parser for the web.",
   "main": "./index",
   "type": "module",
+  "scripts": {
+    "test": "jest"
+  },
   "keywords": [
     "books",
     "ebook",
@@ -25,6 +28,12 @@
     "url": "https://github.com/jcmsj/epub"
   },
   "devDependencies": {
-    "@types/events": "^3.0.0"
+    "@jest/types": "^28.1.3",
+    "@types/events": "^3.0.0",
+    "@types/jest": "^28.1.6",
+    "jest": "^28.1.3",
+    "jest-environment-jsdom": "^28.1.3",
+    "ts-jest": "^28.0.6",
+    "ts-node": "^10.9.1"
   }
 }

@@ -11,5 +11,8 @@ export interface Spine {
 }
 
 export interface RawSpine extends Attribute {
-    itemref: Thing[]
+    itemref: Thing 
+        & { _attributes: 
+        {idref:string}
+        }[]
 }

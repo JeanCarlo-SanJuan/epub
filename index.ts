@@ -290,8 +290,7 @@ export default class Epub extends EventEmitter {
         removeInlineEvents(frag);
         matchAnchorsWithTOC(frag, this.toc)
         replaceSVGImageWithIMG(frag)
-        
-        for (const img of frag.querySelectorAll("img")) {
+        for (const img of Array.from(frag.querySelectorAll("img"))) {
             //TODO: Allow a default image to be used when no src.
             const src = this.rootPath.alter(img.src || img.dataset.src ||"unknown")
             img.dataset.src = src;

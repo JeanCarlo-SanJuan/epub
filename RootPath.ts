@@ -1,4 +1,4 @@
-class RootPath {
+export class RootPath {
     private origin:string = window.location.origin + "/";
     private array:string[]
     private str:string
@@ -10,15 +10,17 @@ class RootPath {
     }
 
     alter(filepath:string):string {
-        filepath = filepath
-            .replace("../", "")
-            .replace(this.origin, "")
-
-        if (filepath.startsWith(this.str)) {
-            return filepath
-        }
-        return this.str + filepath
+        return alter(filepath, this.origin, this.str)
     }
 }
+function alter(filepath:string, origin:string, prefix:string):string {
+    filepath = filepath
+        .replace("../", "")
+        .replace(origin, "")
 
+    if (filepath.startsWith(prefix)) {
+        return filepath
+    }
+    return prefix + filepath
+}
 export default RootPath;
