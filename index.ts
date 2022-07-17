@@ -192,10 +192,9 @@ export default class Epub extends EventEmitter {
     }
 
     /**
-     * Converts text to Object
+     * Converts xml data to Object
      */
     xml2js(data:string):convert.ElementCompact {
-        //MAYBEISSUE: #1: prev version XML2JS
         return convert.xml2js(data, this.conversionOptions)
     }
 
