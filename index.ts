@@ -94,13 +94,10 @@ export default class Epub extends EventEmitter {
      *  are "application/epub+zip". On success, runs root file check.
      **/
     async checkMimeType() {
-        const target = "application/epub+zip";
         const id = "mimetype";
         const {file, data} = await this.readFile(id)
         this.info.mime = file;
-        if (data != target) {
-            throw new TypeError("Incorrect mime")
-        }
+        MIMEError.unless({id, actual:data as string, expected: "application/epub+zip"})
         this.getRootFiles()
     }
 
@@ -127,8 +124,8 @@ export default class Epub extends EventEmitter {
         if (this.info== undefined)
             throw TypeError("No container file");
 
-        const ID = "meta-inf/container.xml"
-        const maybeContainer = await this.readFile(ID);
+        const id = "meta-inf/container.xml"
+        const maybeContainer = await this.readFile(id);
 
         this.info.container = maybeContainer
         const { container } = this.xml2js(this.info.container.data
@@ -140,16 +137,13 @@ export default class Epub extends EventEmitter {
         if (!container.rootfiles || !container.rootfiles.rootfile) 
             throw TypeError("No rootfiles found");
 
-        const { "full-path": fullPath, "media-type": mediaType }:{"full-path":string, "media-type": string} =
+        const d:{"full-path":string, "media-type": string} =
             container.rootfiles.rootfile._attributes;
 
-        const expected = "application/oebps-package+xml"
-        if (mediaType != expected) {
-            throw MIMEError.format({id:ID, actual:mediaType, expected})
-        }
+        MIMEError.unless({id, actual:d["media-type"], expected:"application/oebps-package+xml"})
 
-        this.info.rootName = fullPath
-        this.rootPath = new RootPath(fullPath);
+        this.info.rootName = d["full-path"]
+        this.rootPath = new RootPath(d["full-path"]);
 
         this.handleRootFile();
     }
@@ -230,14 +224,13 @@ export default class Epub extends EventEmitter {
         this.emit(EV.loaded)
     }
     async parseTOC(manifest:trait.Manifest, toc_id:string) {
-        let toc:trait.TableOfContents|undefined;
+        let toc:trait.TableOfContents;
         let tocElem = manifest[toc_id] || manifest["toc"]
         const hasNCX = Boolean(tocElem.id == "ncx")
         const IDs = {};
-        Object.entries(manifest).map(([k, v]) => {
-            IDs[v.href] = k;
-        })
-        
+        Object.entries(manifest)
+            .map(([k, v]) => IDs[v.href] = k)
+
         /*TODOS
          * 1. Decouple xml part so this fx could be declared in its own file.
          */
@@ -330,11 +323,9 @@ export default class Epub extends EventEmitter {
      **/
     private async getContentRaw(id:string):Promise<string> {
         const elem = this.searchManifestOrPanic(id)
-        const allowedMIMETypes = /^(application\/xhtml\+xml|image\/svg\+xml)$/i;
-        const actual = elem["media-type"]
-        const wrong = !allowedMIMETypes.test(actual)
-        if (wrong)
-            throw MIMEError.format({id, expected:allowedMIMETypes.source, actual})
+        const imageMIMEs = /^(application\/xhtml\+xml|image\/svg\+xml)$/i;
+
+        MIMEError.unless({id, actual:elem["media-type"], expected:imageMIMEs})
 
         return (await this.readFile(elem.href)).data.toString();
     }
@@ -349,12 +340,7 @@ export default class Epub extends EventEmitter {
             return this.cache.image[id];
 
         const item = this.searchManifestOrPanic(id)
-        const expected = /^image\//i;
-        const actual = item["media-type"].trim();
-        const match = expected.test(actual)
-        if (!match) {
-            throw MIMEError.format({id, expected:expected.source, actual})
-        }
+        MIMEError.unless({id, actual:item["media-type"].trim(),expected: /^image\//i})
 
         const data = (await this.readFile(item.href, trait.ChapterType.image)).data as Blob
 
