@@ -190,7 +190,7 @@ export default class Epub extends EventEmitter {
         if (entry) 
             return entry;
 
-        throw new Error(`Could not find entry with name ${name}, "ed filename was ${fn}`);
+        throw new Error(`Could not find entry with name ${name}, "extracted filename was ${fn}`);
     }
 
     /**
