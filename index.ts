@@ -169,26 +169,28 @@ export default class Epub extends EventEmitter {
     }
     async getFileInArchive(name: string, isCaseSensitive = false): Promise<zip.Entry> {
         //Remove leading / for paths
-        let fn = name[0] == '/' ? name.slice(1) : name;
+        let fn = decodeURI(name[0] == '/' ? name.slice(1) : name);
         if (isCaseSensitive == false) {
             fn = fn.toLowerCase()
         }
-
-        for (const entry of this.entries) {
-            if (entry.directory)
-                continue;
+        const entry = this.entries.find((n) => {
+            if (n.directory)
+                return false;
 
             //Allow partial matches
-            let eFN = entry.filename;
+            let eFN = n.filename;
             if (isCaseSensitive == false) {
                 eFN = eFN.toLowerCase()
             }
 
             if (eFN.includes(fn) || fn.includes(eFN))
-                return entry
-        }
+                return true;
+        })
 
-        throw new Error(zip.ERR_INVALID_ENTRY_NAME);
+        if (entry) 
+            return entry;
+
+        throw new Error(`Could not find entry with name ${name}, "ed filename was ${fn}`);
     }
 
     /**
