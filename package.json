@@ -17,7 +17,7 @@
   "author": "Jean Carlo M. San Juan",
   "dependencies": {
     "@jcsj/arraymap": "^0.0.3",
-    "@zip.js/zip.js": "^2.5.25",
+    "@zip.js/zip.js": "^2.6.8",
     "events": "^3.3.0",
     "sax": "^1.2.4",
     "stream": "^0.0.2",
