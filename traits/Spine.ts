@@ -2,7 +2,7 @@ import {Thing} from "./Thing";
 import { Attribute } from "./Attribute";
 import { Item } from "./ManifestItem";
 //TODO make enum type for TOC
-export interface Spine {
+export interface Spine extends Thing {
     toc:string,
     contents:Item[],
     _attributes: {}|Thing & {

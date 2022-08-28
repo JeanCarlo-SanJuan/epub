@@ -227,7 +227,7 @@ export default class Epub extends EventEmitter {
     async parseTOC(manifest:trait.Manifest, toc_id:string) {
         let toc:trait.TableOfContents;
         let tocElem = manifest[toc_id] || manifest["toc"]
-        const hasNCX = Boolean(tocElem.id == "ncx")
+        const hasNCX = tocElem.id.includes("ncx")
         const IDs = {};
         Object.entries(manifest)
             .map(([k, v]) => IDs[v.href] = k)

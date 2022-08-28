@@ -5,9 +5,10 @@ export function parseSpine({itemref, _attributes}:RawSpine, rawManifest:Thing): 
     const s:Spine =  {
         toc: "ncx", //TODO: move toc type identification here
         contents: [],
-        _attributes
+         ..._attributes, //Override the default props
+         _attributes: {}
     }
-    
+    s.toc = dotToScore(s.toc) //Workaround: 2.0's toc filename/id may not exactly be 'ncx'.
     if (itemref) {
         itemref = toArray(itemref)
         s.contents = itemref.map(({_attributes:atrs}, index) => {

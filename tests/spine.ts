@@ -17,10 +17,8 @@ export const parsed: Spine = {
         "media-type": "application/xhtml+xml",
     },],
     toc: "ncx",
-    _attributes: {
-        "page-progression-direction": "ltr",
-        "toc": "ncx"
-    }
+    "page-progression-direction": "ltr",
+    _attributes: {}
 }
 
 export const raw:RawSpine = {
