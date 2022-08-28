@@ -39,7 +39,6 @@ manifest:Manifest
             element.id = (part._attributes.id || "").trim();
         else { // link existing object
             element = {... manifest[id], title, order, level};
-            element.id = element.id.replace('.','_')
             element.navPoint = (part.navPoint) ?
                 walkNavMap(
                     {
