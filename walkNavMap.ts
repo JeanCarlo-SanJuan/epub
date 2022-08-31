@@ -5,25 +5,29 @@ export function walkNavMap
 ({branch, path, IDs, level = 0}:Nav.Node, 
 manifest:Manifest
 ) {
+    const output:TableOfContents = new TableOfContents();
     // limit depth
     if (level > 7)
-        return undefined;
-    const output:TableOfContents = new TableOfContents();
-    
+        return output;
+        
+    let order = 0;
     for (const part of toArray(branch)) {
         let title = "";
             
         if (part.navLabel)
             title = (part.navLabel.text._text || part.navLabel).trim()
-
-        let order = Number(part._attributes.playOrder) || 0
+        try {
+            order = parseInt(part._attributes.playOrder)
+        } catch (error) {
+            order++
+        }
 
         let href:string = part.content._attributes.src;
 
-        if (href == null)
-            continue;
-        else
+        if (href)
             href = href.trim();
+        else
+            continue;
 
         let element:Nav.Leaf = {
             level: level,
