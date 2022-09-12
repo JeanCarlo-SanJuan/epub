@@ -5,18 +5,17 @@ import RootPath from "./RootPath";
 import EV from "./EV"
 import * as trait from "./traits";
 import BookCache from "./BookCache";
-import { matchTOCWithManifest } from "./matchTOCWithManifest";
 import { parseSpine } from "./parseSpine";
 import { parseManifest } from "./parseManifest";
 import { parseMetadata } from "./parseMetadata";
 import { parseFlow } from "./parseFlow";
-import { walkNavMap } from "./walknavMap";
-import { walkTOC } from "./walkTOC";
 import {MIMEError} from "./error/MIMEError"
 import { xmlToFragment } from "./xmlToFragment.js";
 import { removeInlineEvents } from "./removeInlineEvents.js";
 import { replaceSVGImageWithIMG } from "./replaceSVGWithIMG.js";
 import { matchAnchorsWithTOC } from "./matchAnchorsWithTOC.js";
+import { TableOfContents } from "./toc/TableOfContents";
+import { parseTOC } from "./toc/parseTOC";
 
 export {EV} from "./EV"
 export type UnaryFX<T, RT> = (v:T) => RT;
@@ -40,8 +39,7 @@ export default class Epub extends EventEmitter {
     manifest: trait.Manifest = {}
     spine: trait.Spine;
     flow = new trait.Flow();
-    toc = new trait.TableOfContents()
-    toc_type:string;
+    toc = new TableOfContents()
     chapterTransformer: maybeChapterTransformer;
     cache = new BookCache()
     reader: zip.ZipReader<Blob>
@@ -218,45 +216,9 @@ export default class Epub extends EventEmitter {
         this.flow = parseFlow(this.spine.contents);
         this.emit(EV.flow)
 
-        const {toc, type} = await this.parseTOC(this.manifest, this.spine.toc)
-        this.toc = toc
-        this.toc_type = type;
+        this.toc = await parseTOC(this.manifest, this.spine.toc, this)
         this.emit(EV.toc)
         this.emit(EV.loaded)
-    }
-    async parseTOC(manifest:trait.Manifest, toc_id:string) {
-        let toc:trait.TableOfContents;
-        let tocElem = manifest[toc_id] || manifest["toc"]
-        const IDs = {};
-        Object.entries(manifest)
-            .map(([k, v]) => IDs[v.href] = k)
-
-        /*TODOS
-         * 1. Decouple xml part so this fx could be declared in its own file.
-         */
-        const xml = await this.zip2JS(tocElem.href);
-        const hasNCX = xml.ncx != undefined;
-        if (hasNCX) {
-            const path = tocElem.href.split("/")
-            path.pop();
-            toc = walkNavMap(
-                {
-                branch: xml.ncx.navMap.navPoint,
-                path, 
-                IDs,
-                level:0
-                }
-                , manifest
-            )
-        } else {
-            toc = walkTOC(xml.html.body, manifest);
-        }
-
-        if(toc == undefined)
-            throw new TypeError(`NO TOC found for id: ${toc_id}, input: ${manifest}`);
-
-        //TODO: Make `type` an enum
-        return {type:hasNCX ? "ncx":"toc", toc: matchTOCWithManifest(toc, manifest)}
     }
 
     /**

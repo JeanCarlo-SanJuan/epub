@@ -1,7 +1,7 @@
-import { Thing } from "./Thing";
-import { Item } from "./ManifestItem";
-import { Attribute } from "./Attribute";
-import { TableOfContents } from "./TOC";
+import { Thing } from "../traits/Thing";
+import { Item } from "../traits/ManifestItem";
+import { Attribute } from "../traits/Attribute";
+import { TableOfContents } from "./TableOfContents";
 export interface Node{
     branch?: TableOfContents;
     path: string[];

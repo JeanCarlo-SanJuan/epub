@@ -1,4 +1,4 @@
-import { Manifest, TableOfContents } from "./traits";
+import { TableOfContents } from "./toc/TableOfContents";
 
 /**
  * Replaces chapter links inside a `DocumentFragment` with the ids that can be used for referral in the TOC.

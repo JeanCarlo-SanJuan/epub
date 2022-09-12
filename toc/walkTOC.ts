@@ -1,4 +1,5 @@
-import { Chapter, Manifest, TableOfContents, Thing } from "./traits";
+import { Chapter, Manifest, Thing } from "../traits";
+import { TableOfContents } from "./TableOfContents";
 
 export function walkTOC(body: Thing, manifest: Manifest): TableOfContents {
     let order = 0;

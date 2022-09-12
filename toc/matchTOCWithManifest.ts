@@ -1,5 +1,5 @@
-import { Manifest } from "./traits";
-import { TableOfContents } from "./traits/TOC";
+import { Manifest } from "../traits";
+import { TableOfContents } from "./TableOfContents";
 
 export function matchTOCWithManifest(toc:TableOfContents, manifest:Manifest) {
     toc.forEach((elem, id) => {

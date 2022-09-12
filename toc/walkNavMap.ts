@@ -1,5 +1,7 @@
-import toArray from "./toArray";
-import { Nav, Manifest, TableOfContents } from "./traits";
+import toArray from "../toArray";
+import { Manifest } from "../traits";
+import * as Nav from "./NavTree";
+import { TableOfContents } from "./TableOfContents";
 
 export function walkNavMap
 ({branch, path, IDs, level = 0}:Nav.Node, 
