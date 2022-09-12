@@ -227,7 +227,6 @@ export default class Epub extends EventEmitter {
     async parseTOC(manifest:trait.Manifest, toc_id:string) {
         let toc:trait.TableOfContents;
         let tocElem = manifest[toc_id] || manifest["toc"]
-        const hasNCX = tocElem.id.includes("ncx")
         const IDs = {};
         Object.entries(manifest)
             .map(([k, v]) => IDs[v.href] = k)
@@ -236,6 +235,7 @@ export default class Epub extends EventEmitter {
          * 1. Decouple xml part so this fx could be declared in its own file.
          */
         const xml = await this.zip2JS(tocElem.href);
+        const hasNCX = xml.ncx != undefined;
         if (hasNCX) {
             const path = tocElem.href.split("/")
             path.pop();
@@ -255,7 +255,8 @@ export default class Epub extends EventEmitter {
         if(toc == undefined)
             throw new TypeError(`NO TOC found for id: ${toc_id}, input: ${manifest}`);
 
-        return {type:tocElem.id, toc: matchTOCWithManifest(toc, manifest)}
+        //TODO: Make `type` an enum
+        return {type:hasNCX ? "ncx":"toc", toc: matchTOCWithManifest(toc, manifest)}
     }
 
     /**
