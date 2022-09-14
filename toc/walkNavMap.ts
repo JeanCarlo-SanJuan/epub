@@ -15,9 +15,13 @@ manifest:Manifest
     let order = 0;
     for (const part of toArray(branch)) {
         let title = "";
-            
-        if (part.navLabel)
-            title = (part.navLabel.text._text || part.navLabel).trim()
+        try {
+            if (part.navLabel)
+                title = (part.navLabel.text._text || part.navLabel).trim() || ""
+        } catch (error) {
+            //PASS
+        }
+          
         try {
             order = parseInt(part._attributes.playOrder)
         } catch (error) {
@@ -40,7 +44,7 @@ manifest:Manifest
         element.href = path.concat([href]).join("/");
 
         const id = IDs[element.href] || null
-
+        
         if (id == null) // use new one
             element.id = (part._attributes.id || "").trim();
         else { // link existing object
