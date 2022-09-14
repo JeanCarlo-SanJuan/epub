@@ -81,31 +81,29 @@ export default class Epub extends EventEmitter {
         // close the ZipReader
         await this.reader.close();
 
-        if (this.entries)
+        if (this.entries.length) {
             this.checkMimeType();
+            this.getRootFiles()
+        }
         else
-            new Error(zip.ERR_ABORT + " no files in archive!")
+            new Error("Empty archive!")
     }
 
     /**
-     *  Checks if there's a file called "mimetype" and that it's contents
-     *  are "application/epub+zip". On success, runs root file check.
+     *  Finds a file named "mimetype" and check if the content
+     *  is exactly "application/epub+zip".
      **/
     async checkMimeType() {
         const id = "mimetype";
         const {file, data} = await this.readFile(id)
         this.info.mime = file;
         MIMEError.unless({id, actual:data as string, expected: "application/epub+zip"})
-        this.getRootFiles()
     }
 
     async readFile(name:string, writer:trait.ChapterType=trait.ChapterType.text):Promise<trait.LoadedEntry> {
         const file = await this.getFileInArchive(name);
         const w = this.determineWriter(writer);
-
-        /* @TS-IGNORE 
-         * Though there's a warning, it does not show which var is the _object_ as such just ignore it for now. The code below _works_ as far as the previous js ver was.
-         */
+       
         return {
             file, 
             data: await file.getData(w)
