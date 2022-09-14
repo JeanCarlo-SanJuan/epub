@@ -82,7 +82,7 @@ export default class Epub extends EventEmitter {
         await this.reader.close();
 
         if (this.entries.length) {
-            this.checkMimeType();
+            await this.checkMimeType();
             this.getRootFiles()
         }
         else
