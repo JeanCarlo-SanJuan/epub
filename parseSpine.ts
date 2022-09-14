@@ -2,7 +2,7 @@ import toArray from "./toArray";
 import { RawSpine, Thing, Spine, Item } from "./traits";
 export function parseSpine({itemref, _attributes}:RawSpine, rawManifest:Thing): Spine {
     const s:Spine =  {
-        toc: "ncx", //TODO: move toc type identification here
+        toc: "ncx",
         contents: [],
          ..._attributes, //Override the default props
          _attributes: {}
