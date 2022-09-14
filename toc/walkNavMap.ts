@@ -15,6 +15,13 @@ manifest:Manifest
     let order = 0;
     for (const part of toArray(branch)) {
         let title = "";
+        let href:string = part.content._attributes.src;
+
+        if (href)
+            href = path.concat([href.trim()]).join("/") ;
+        else
+            continue;
+
         try {
             if (part.navLabel)
                 title = (part.navLabel.text._text || part.navLabel).trim() || ""
@@ -28,27 +35,19 @@ manifest:Manifest
             order++
         }
 
-        let href:string = part.content._attributes.src;
-
-        if (href)
-            href = href.trim();
-        else
-            continue;
-
         let element:Nav.Leaf = {
             level: level,
             order: order,
             title: title,
+            href,
+            id: IDs[href] || null,
+            "media-type": ""
         };
 
-        element.href = path.concat([href]).join("/");
-
-        const id = IDs[element.href] || null
-        
-        if (id == null) // use new one
-            element.id = (part._attributes.id || "").trim();
+        if (element.id == null) // use new one
+            element.id = part._attributes.id.trim() || "";
         else { // link existing object
-            element = {... manifest[id], title, order, level};
+            element = {... manifest[element.id], title, order, level};
             element.navPoint = (part.navPoint) ?
                 walkNavMap(
                     {
