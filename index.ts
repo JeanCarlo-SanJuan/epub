@@ -1,23 +1,22 @@
-import { EventEmitter } from "events"
 import * as zip from "@zip.js/zip.js"
 import convert from "xml-js";
-import RootPath from "./RootPath";
-import EV from "./EV"
-import * as trait from "./traits";
-import BookCache from "./BookCache";
-import { parseSpine } from "./parseSpine";
-import { parseManifest } from "./parseManifest";
-import { parseMetadata } from "./parseMetadata";
-import { parseFlow } from "./parseFlow";
-import {MIMEError} from "./error/MIMEError"
-import { xmlToFragment } from "./xmlToFragment.js";
-import { removeInlineEvents } from "./removeInlineEvents.js";
-import { replaceSVGImageWithIMG } from "./replaceSVGWithIMG.js";
-import { matchAnchorsWithTOC } from "./matchAnchorsWithTOC.js";
-import { TableOfContents } from "./toc/TableOfContents";
-import { parseTOC } from "./toc/parseTOC";
+import RootPath from "./src/RootPath";
+import EV from "./src/EV"
+import * as trait from "./src/traits";
+import BookCache from "./src/BookCache";
+import { parseSpine } from "./src/parseSpine";
+import { parseManifest } from "./src/parseManifest";
+import { parseMetadata } from "./src/parseMetadata";
+import { parseFlow } from "./src/parseFlow";
+import {MIMEError} from "./src/error/MIMEError"
+import { xmlToFragment } from "./src/xmlToFragment.js";
+import { removeInlineEvents } from "./src/removeInlineEvents.js";
+import { replaceSVGImageWithIMG } from "./src/replaceSVGWithIMG.js";
+import { matchAnchorsWithTOC } from "./src/matchAnchorsWithTOC.js";
+import { TableOfContents } from "./src/toc/TableOfContents";
+import { parseTOC } from "./src/toc/parseTOC";
 
-export {EV} from "./EV"
+export {EV} from "./src/EV"
 export type UnaryFX<T, RT> = (v:T) => RT;
 export type maybeChapterTransformer = null | UnaryFX<DocumentFragment, HTMLElement>;
 
@@ -28,22 +27,22 @@ export type EPUBProgressEvents = {
 export class UnknownItem extends TypeError {
     name="UnknownItem"
 }
-export default class Epub extends EventEmitter {
+export default class Epub {
     info: trait.Info = {
         archive:null,
         container:null,
         mime:null,
         rootName:null
     }
-    metadata: trait.Metadata;
+    metadata: trait.Metadata | undefined;
     manifest: trait.Manifest = {}
-    spine: trait.Spine;
+    spine: trait.Spine | undefined;
     flow = new trait.Flow();
     toc = new TableOfContents()
     chapterTransformer: maybeChapterTransformer;
     cache = new BookCache()
-    reader: zip.ZipReader<Blob>
-    entries: zip.Entry[]
+    reader: zip.ZipReader<Blob> | undefined
+    entries: zip.Entry[] = []
     conversionOptions:convert.Options.XML2JSON = {
         compact:true,
         spaces:4
@@ -51,29 +50,27 @@ export default class Epub extends EventEmitter {
     rootPath:RootPath;
     rootXML: convert.ElementCompact;
     version: string;
+    progressEvents: EPUBProgressEvents;
 
     constructor
     (archive: File, 
     chapterTransformer: maybeChapterTransformer  = null) {
-        super();
         this.info.archive = archive
         this.chapterTransformer = chapterTransformer;
     }
-
+    emit(ev:EV) {
+        this.progressEvents[ev]?.()
+    }
     /**
      *  Extracts the epub files from a zip archive, retrieves file listing
      *  and runs mime type check. May optionally set event listeners with an object whose keys denotes the 'event name' while the value must be a function. "this" shall be bounded to the 'Epub' instance. 
      **/
     async open(p: EPUBProgressEvents = {}) {
+        this.progressEvents = p
         if (this.info.archive == null)
             return;
 
         this.reader = new zip.ZipReader(new zip.BlobReader(this.info.archive))
-
-        Object.entries(p)
-        .forEach(([ev, cb]) => 
-            this.on(ev, cb.bind(this))
-        )
 
         // get all entries from the zip
         this.entries = await this.reader.getEntries();
@@ -179,8 +176,7 @@ export default class Epub extends EventEmitter {
                 eFN = eFN.toLowerCase()
             }
 
-            if (eFN.includes(fn) || fn.includes(eFN))
-                return true;
+            return eFN.includes(fn) || fn.includes(eFN)
         })
 
         if (entry) 

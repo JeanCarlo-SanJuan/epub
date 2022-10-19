@@ -13,20 +13,19 @@ Where
 
 Before the contents of the ebook can be read, it must be opened (`Epub` is an `EventEmitter`).
 
-As of 1.6, one should use the EV enum.
-It represents the events that will be fired as parts of the book is parsed. Epub readers may use it to speed-up preview.
+As of 1.9, Epub no longer extends event emitter. Instead pass the events map to .open.
 ```js
 import {EV} from "@jcsj/epub"
 
-epub.on(EV.metadata, async()=> {
-  console.log(epub.metadata.title)
+epub.open({
+  async loaded() {
+    const text = await epub.getContent('chapter_id')
+  },
+  //Or
+  meatadata: () => {
+    console.log(epub.metadata.title)
+  }
 })
-
-epub.on(EV.loaded, async() => {
-  let text = await epub.getContent('chapter_id')
-})
-
-epub.open()
 ```
 
 ## Item

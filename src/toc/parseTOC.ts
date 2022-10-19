@@ -1,4 +1,4 @@
-import Epub from "..";
+import Epub from "../..";
 import { matchTOCWithManifest } from "./matchTOCWithManifest.js";
 import { walkNavMap } from "./walkNavMap";
 import { walkTOC } from "./walkTOC";
