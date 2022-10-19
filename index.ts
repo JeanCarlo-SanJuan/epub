@@ -9,10 +9,10 @@ import { parseManifest } from "./src/parseManifest";
 import { parseMetadata } from "./src/parseMetadata";
 import { parseFlow } from "./src/parseFlow";
 import {MIMEError} from "./src/error/MIMEError"
-import { xmlToFragment } from "./src/xmlToFragment.js";
-import { removeInlineEvents } from "./src/removeInlineEvents.js";
-import { replaceSVGImageWithIMG } from "./src/replaceSVGWithIMG.js";
-import { matchAnchorsWithTOC } from "./src/matchAnchorsWithTOC.js";
+import { xmlToFragment } from "./src/xmlToFragment";
+import { removeInlineEvents } from "./src/removeInlineEvents";
+import { replaceSVGImageWithIMG } from "./src/replaceSVGWithIMG";
+import { matchAnchorsWithTOC } from "./src/matchAnchorsWithTOC";
 import { TableOfContents } from "./src/toc/TableOfContents";
 import { parseTOC } from "./src/toc/parseTOC";
 

@@ -1,5 +1,5 @@
 import Epub from "../..";
-import { matchTOCWithManifest } from "./matchTOCWithManifest.js";
+import { matchTOCWithManifest } from "./matchTOCWithManifest";
 import { walkNavMap } from "./walkNavMap";
 import { walkTOC } from "./walkTOC";
 import {Manifest} from "../traits";
