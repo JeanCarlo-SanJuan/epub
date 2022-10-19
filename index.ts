@@ -215,8 +215,13 @@ export default class Epub extends EventEmitter {
         this.emit(EV.flow)
 
         this.toc = await parseTOC(this.manifest, this.spine.toc, this)
-        this.emit(EV.toc)
-        this.emit(EV.loaded)
+     
+        if (this.toc) {
+            this.emit(EV.toc)
+            this.emit(EV.loaded)
+        } else {
+            throw TypeError("NO TOC")
+        }
     }
 
     /**
