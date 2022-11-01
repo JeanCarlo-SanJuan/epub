@@ -7,7 +7,8 @@ export function parseMetadata(rawMetadata: Thing):Metadata {
         UUID: "",
         ISBN: "",
         language: "en",
-        date: "unknown"
+        date: "unknown",
+        title:""
     };
 
     Object.entries(rawMetadata).forEach(([k,v]:[k:string, v:Thing]) => {

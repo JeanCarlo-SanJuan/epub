@@ -8,5 +8,6 @@ export interface Metadata {
     language:string,
     date:string|any,
     description?:string,
-    subject?:string|Thing[]
+    subject?:string|Thing[],
+    title:string
 }

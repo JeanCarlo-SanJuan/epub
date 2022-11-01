@@ -31,7 +31,7 @@ export class Epub {
         mime: null,
         rootName: null
     }
-    metadata: trait.Metadata | undefined;
+    metadata: trait.Metadata= {};
     manifest: trait.Manifest = {}
     spine: trait.Spine | undefined;
     flow = new trait.Flow();
