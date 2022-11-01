@@ -1,18 +1,18 @@
-import { RawSpine, Spine } from "../traits";
+import { RawSpine, Spine } from "../lib/traits";
 
 export const parsed: Spine = {
     contents: [{
-        id: "Cover_jpg",
+        id: "Cover.jpg",
         href: "oebps/Images/Cover.jpg",
         "media-type": "image/jpeg",
         properties: "cover-image",
     },
     {
-        id: "text_xhtml",
+        id: "text.xhtml",
         href: "oebps/Text/text.xhtml",
         "media-type": "application/xhtml+xml",
     }, {
-        id: "sample-1_xhtml",
+        id: "sample-1.xhtml",
         href: "oebps/Text/sample-1.xhtml",
         "media-type": "application/xhtml+xml",
     },],

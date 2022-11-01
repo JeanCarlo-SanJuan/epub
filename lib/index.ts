@@ -1,38 +1,35 @@
 import * as zip from "@zip.js/zip.js"
-import convert from "xml-js";
-import RootPath from "./src/RootPath";
-import EV from "./src/EV"
-import * as trait from "./src/traits";
-import BookCache from "./src/BookCache";
-import { parseSpine } from "./src/parseSpine";
-import { parseManifest } from "./src/parseManifest";
-import { parseMetadata } from "./src/parseMetadata";
-import { parseFlow } from "./src/parseFlow";
-import {MIMEError} from "./src/error/MIMEError"
-import { xmlToFragment } from "./src/xmlToFragment";
-import { removeInlineEvents } from "./src/removeInlineEvents";
-import { replaceSVGImageWithIMG } from "./src/replaceSVGWithIMG";
-import { matchAnchorsWithTOC } from "./src/matchAnchorsWithTOC";
-import { TableOfContents } from "./src/toc/TableOfContents";
-import { parseTOC } from "./src/toc/parseTOC";
-
-export {EV} from "./src/EV"
-export type UnaryFX<T, RT> = (v:T) => RT;
+import * as convert from "@jcsj/xml-js";
+import RootPath from "./RootPath";
+import EV from "./EV"
+import * as trait from "./traits";
+import BookCache from "./BookCache";
+import { parseSpine } from "./parseSpine";
+import { parseManifest } from "./parseManifest";
+import { parseMetadata } from "./parseMetadata";
+import { parseFlow } from "./parseFlow";
+import { MIMEError } from "./error/MIMEError"
+import { xmlToFragment } from "./xmlToFragment";
+import { removeInlineEvents } from "./removeInlineEvents";
+import { replaceSVGImageWithIMG } from "./replaceSVGWithIMG";
+import { matchAnchorsWithTOC } from "./matchAnchorsWithTOC";
+import { TableOfContents } from "./toc/TableOfContents";
+import { parseTOC } from "./toc/parseTOC";
+import { UnknownItemError } from "./error/UnkownItemError";
+export { EV } from "./EV"
+export type UnaryFX<T, RT> = (v: T) => RT;
 export type maybeChapterTransformer = null | UnaryFX<DocumentFragment, HTMLElement>;
 
 export type EPUBProgressEvents = {
     [key in EV]?: Function;
 };
 
-export class UnknownItem extends TypeError {
-    name="UnknownItem"
-}
-export default class Epub {
+export class Epub {
     info: trait.Info = {
-        archive:null,
-        container:null,
-        mime:null,
-        rootName:null
+        archive: null,
+        container: null,
+        mime: null,
+        rootName: null
     }
     metadata: trait.Metadata | undefined;
     manifest: trait.Manifest = {}
@@ -43,22 +40,22 @@ export default class Epub {
     cache = new BookCache()
     reader: zip.ZipReader<Blob> | undefined
     entries: zip.Entry[] = []
-    conversionOptions:convert.Options.XML2JSON = {
-        compact:true,
-        spaces:4
+    conversionOptions: convert.Options.XML2JSON = {
+        compact: true,
+        spaces: 4
     }
-    rootPath:RootPath;
-    rootXML: convert.ElementCompact;
-    version: string;
-    progressEvents: EPUBProgressEvents;
+    rootPath!: RootPath;
+    rootXML: convert.ElementCompact = {};
+    version: string = "";
+    progressEvents: EPUBProgressEvents = {};
 
     constructor
-    (archive: File, 
-    chapterTransformer: maybeChapterTransformer  = null) {
+        (archive: File,
+            chapterTransformer: maybeChapterTransformer = null) {
         this.info.archive = archive
         this.chapterTransformer = chapterTransformer;
     }
-    emit(ev:EV) {
+    emit(ev: EV) {
         this.progressEvents[ev]?.()
     }
     /**
@@ -92,17 +89,17 @@ export default class Epub {
      **/
     async checkMimeType() {
         const id = "mimetype";
-        const {file, data} = await this.readFile(id)
+        const { file, data } = await this.readFile(id)
         this.info.mime = file;
-        MIMEError.unless({id, actual:data as string, expected: "application/epub+zip"})
+        MIMEError.unless({ id, actual: data as string, expected: "application/epub+zip" })
     }
 
-    async readFile(name:string, writer:trait.ChapterType=trait.ChapterType.text):Promise<trait.LoadedEntry> {
+    async readFile(name: string, writer: trait.ChapterType = trait.ChapterType.text): Promise<trait.LoadedEntry> {
         const file = await this.getFileInArchive(name);
         const w = this.determineWriter(writer);
-       
+
         return {
-            file, 
+            file,
             data: await file.getData(w)
         }
     }
@@ -114,7 +111,7 @@ export default class Epub {
      *  On success, calls the rootfile parser
      **/
     async getRootFiles() {
-        if (this.info== undefined)
+        if (this.info == undefined)
             throw TypeError("No container file");
 
         const id = "meta-inf/container.xml"
@@ -127,13 +124,13 @@ export default class Epub {
             .trim()
         )
 
-        if (!container.rootfiles || !container.rootfiles.rootfile) 
+        if (!container.rootfiles || !container.rootfiles.rootfile)
             throw TypeError("No rootfiles found");
 
-        const d:{"full-path":string, "media-type": string} =
+        const d: { "full-path": string, "media-type": string } =
             container.rootfiles.rootfile._attributes;
 
-        MIMEError.unless({id, actual:d["media-type"], expected:"application/oebps-package+xml"})
+        MIMEError.unless({ id, actual: d["media-type"], expected: "application/oebps-package+xml" })
 
         this.info.rootName = d["full-path"]
         this.rootPath = new RootPath(d["full-path"]);
@@ -152,7 +149,7 @@ export default class Epub {
     /**
      * @returns the appropriate zip writer
      */
-    determineWriter(t:trait.ChapterType) {
+    determineWriter(t: trait.ChapterType) {
         switch (t) {
             case trait.ChapterType.image:
                 return new zip.BlobWriter("image/*")
@@ -179,7 +176,7 @@ export default class Epub {
             return eFN.includes(fn) || fn.includes(eFN)
         })
 
-        if (entry) 
+        if (entry)
             return entry;
 
         throw new Error(`Could not find entry with name ${name}, "extracted filename was ${fn}`);
@@ -188,15 +185,15 @@ export default class Epub {
     /**
      * Converts xml data to Object
      */
-    xml2js(data:string):convert.ElementCompact {
+    xml2js(data: string): convert.ElementCompact {
         return convert.xml2js(data, this.conversionOptions)
     }
 
-    async zip2JS(name:string) {
-        const {data} = await this.readFile(name);
+    async zip2JS(name: string) {
+        const { data } = await this.readFile(name);
         return this.xml2js(data as string);
     }
-    async parseRootFile({package:pkg}:{package:trait.RootFile}) {
+    async parseRootFile({ package: pkg }: { package: trait.RootFile }) {
         this.version = pkg._attributes.version || "2.0";
         this.metadata = parseMetadata(pkg.metadata)
         this.emit(EV.metadata)
@@ -211,7 +208,7 @@ export default class Epub {
         this.emit(EV.flow)
 
         this.toc = await parseTOC(this.manifest, this.spine.toc, this)
-     
+
         if (this.toc) {
             this.emit(EV.toc)
             this.emit(EV.loaded)
@@ -224,7 +221,7 @@ export default class Epub {
      *  Parses the tree to see if there's an encryption file, signifying the presence of DRM
      *  see: https://stackoverflow.com/questions/14442968/how-to-check-if-an-epub-file-is-drm-protected
      **/
-    hasDRM () {
+    hasDRM() {
         const drmFile = 'META-INF/encryption.xml';
         return Object.keys(this.entries).includes(drmFile);
     }
@@ -237,7 +234,7 @@ export default class Epub {
     * @param {string} id :Manifest id of the file
     * @returns {Promise<string>} : Chapter text for mime type application/xhtml+xml
     */
-    async getContent(id:string): Promise<string> {
+    async getContent(id: string): Promise<string> {
         if (Object.keys(this.cache.text).includes(id))
             return this.cache.text[id];
 
@@ -248,10 +245,10 @@ export default class Epub {
         replaceSVGImageWithIMG(frag)
         for (const img of Array.from(frag.querySelectorAll("img"))) {
             //TODO: Allow a default image to be used when no src.
-            const src = this.rootPath.alter(img.src || img.dataset.src ||"unknown")
+            const src = this.rootPath.alter(img.src || img.dataset.src || "unknown")
             img.dataset.src = src;
-            for(const _id in this.manifest) {
-                if(src == this.manifest[_id].href) {
+            for (const _id in this.manifest) {
+                if (src == this.manifest[_id].href) {
                     img.src = await this.getImage(_id);
                 }
             }
@@ -264,19 +261,19 @@ export default class Epub {
         if (this.chapterTransformer instanceof Function) {
             try {
                 str = this.chapterTransformer(frag).innerHTML;
-            } catch(e) {
+            } catch (e) {
                 console.log("Transform failed: ", id, e);
             }
         }
 
         this.cache.setText(id, str)
         return str
-        }
+    }
 
-    searchManifestOrPanic(id:string) {
+    searchManifestOrPanic(id: string) {
         const l = this.manifest[id] || null
         if (l == null)
-            throw Error(`Unkown manifest item: ${id}`)
+            throw new UnknownItemError(`Unkown manifest item: ${id}`);
 
         return l;
     }
@@ -284,11 +281,11 @@ export default class Epub {
      * @param {string} id :Manifest id value for the content
      * @returns {Promise<string>} : Raw Chapter text for mime type application/xhtml+xml
      **/
-    private async getContentRaw(id:string):Promise<string> {
+    private async getContentRaw(id: string): Promise<string> {
         const elem = this.searchManifestOrPanic(id)
         const imageMIMEs = /^(application\/xhtml\+xml|image\/svg\+xml)$/i;
 
-        MIMEError.unless({id, actual:elem["media-type"], expected:imageMIMEs})
+        MIMEError.unless({ id, actual: elem["media-type"], expected: imageMIMEs })
 
         return (await this.readFile(elem.href)).data.toString();
     }
@@ -298,12 +295,12 @@ export default class Epub {
      * @param {string} id of the image file in the manifest
      * @returns {Promise<string>} Returns a promise of the image as a blob if it has a proper mime type.
      */
-    async getImage(id:string): Promise<string> {
-        if(this.cache.image[id])
+    async getImage(id: string): Promise<string> {
+        if (this.cache.image[id])
             return this.cache.image[id];
 
         const item = this.searchManifestOrPanic(id)
-        MIMEError.unless({id, actual:item["media-type"].trim(),expected: /^image\//i})
+        MIMEError.unless({ id, actual: item["media-type"].trim(), expected: /^image\//i })
 
         const data = (await this.readFile(item.href, trait.ChapterType.image)).data as Blob
 
@@ -327,3 +324,5 @@ export default class Epub {
         })
     }
 }
+
+export default Epub;

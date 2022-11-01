@@ -1,4 +1,5 @@
-import { parseManifest } from "../parseManifest";
+
+import { parseManifest } from "../lib/parseManifest";
 import {raw, parsed} from "./manifest"
 import {rootPath} from "./roothPathInstance"
 it("parses valid raw manifest", () => {

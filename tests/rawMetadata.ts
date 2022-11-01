@@ -1,4 +1,4 @@
-import { Metadata, Thing } from "../traits"
+import { Metadata } from "../lib/traits"
 
 export const parsed:Metadata = {
     "creator": "Lewis Carroll",

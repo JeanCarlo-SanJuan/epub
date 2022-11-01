@@ -1,6 +1,6 @@
 export default class BookCache {
-    text ={}
-    image = {}
+    text:Record<string, string> = {}
+    image:Record<string, string> = {}
     setText(id:string, t:string) {
         this.text[id] = t;
     }

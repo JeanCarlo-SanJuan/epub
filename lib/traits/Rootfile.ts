@@ -1,4 +1,4 @@
-import { ElementCompact } from "xml-js"
+import { ElementCompact } from "@jcsj/xml-js"
 import {Metadata} from "./Metadata"
 import {Thing} from "./Thing"
 import {RawSpine} from "./Spine"

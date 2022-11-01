@@ -1,11 +1,12 @@
 export class RootPath {
-    private origin:string = window.location.origin + "/";
+    private origin:string;
     private array:string[]
     private str:string
 
-    constructor(fullPath:string) {
+    constructor(fullPath:string, origin?:string) {
         this.array = fullPath.split("/");
         this.array.pop()
+        this.origin = (origin ?? window.location.origin + "/") || ""
         this.str = this.array.join("/") + "/";
     }
 

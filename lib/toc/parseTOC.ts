@@ -1,13 +1,13 @@
-import Epub from "../..";
+import Epub from "../";
 import { matchTOCWithManifest } from "./matchTOCWithManifest";
 import { walkNavMap } from "./walkNavMap";
 import { walkTOC } from "./walkTOC";
-import {Manifest} from "../traits";
+import { Manifest } from "../traits";
 import { TableOfContents } from "./TableOfContents";
 
 export async function parseTOC(manifest:Manifest, toc_id:string, epub:Epub) {
     let toc:TableOfContents;
-    const IDs = {};
+    const IDs:{[key:string]:string} = {};
     Object.entries(manifest)
         .map(([k, v]) => IDs[v.href] = k)
 

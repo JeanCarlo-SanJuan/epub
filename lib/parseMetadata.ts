@@ -1,6 +1,5 @@
 import { Metadata, Thing } from "./traits";
 import { extractUUID } from "./extractUUID"
-import {Attribute} from "./traits/Attribute"
 
 export function parseMetadata(rawMetadata: Thing):Metadata {
     const md: Metadata = {
