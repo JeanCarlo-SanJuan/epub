@@ -2,7 +2,7 @@ lockfileVersion: 5.4
 
 specifiers:
   '@jcsj/arraymap': ^0.0.3
-  '@jcsj/xml-js': github:jcmsj/xml-js
+  '@jcsj/xml-js': ^1.6.13
   '@jest/types': ^29.2.1
   '@types/jest': ^29.2.1
   '@types/mocha': ^10.0.0
@@ -16,7 +16,7 @@ specifiers:
 
 dependencies:
   '@jcsj/arraymap': 0.0.3
-  '@jcsj/xml-js': github.com/jcmsj/xml-js/b2ccc832e3949c8ec9a702befb31d2b349fc22ef
+  '@jcsj/xml-js': 1.6.13
   '@zip.js/zip.js': 2.6.51
 
 devDependencies:
@@ -414,6 +414,16 @@ packages:
 
   /@jcsj/arraymap/0.0.3:
     resolution: {integrity: sha512-vy8WChoDQqDnqwAjxYR6bZiCmNS6T75uFF0yP6hGmntcyhe6jQaXjENEnnXGhztVEkrOrI6WwmDU5wIazPLqrQ==}
+    dev: false
+
+  /@jcsj/sax/1.2.7:
+    resolution: {integrity: sha512-gHF5jlPernovbRTU3s3k0kwR7dm6qWciN3DCupnipsTVOrqQhp7fBQSwLYghYceqRrpHGvzrtgkUfbV0JonlYw==}
+    dev: false
+
+  /@jcsj/xml-js/1.6.13:
+    resolution: {integrity: sha512-ozRzWsVjcAsdT3jLngSsfNCTfkzegtmveqpZ6cJ8PWo2F56gIwZIH4HPEvTFNNc+WULHhH7OSKiM+v333/cpMA==}
+    dependencies:
+      '@jcsj/sax': 1.2.7
     dev: false
 
   /@jest/console/29.2.1:
@@ -3086,17 +3096,3 @@ packages:
     resolution: {integrity: sha512-rVksvsnNCdJ/ohGc6xgPwyN8eheCxsiLM8mxuE/t/mOVqJewPuO1miLpTHQiRgTKCLexL4MeAFVagts7HmNZ2Q==}
     engines: {node: '>=10'}
     dev: true
-
-  github.com/jcmsj/sax-js/8d89bd0e6a75a442fbbe4e0f55ec64d9d3344bb3:
-    resolution: {tarball: https://codeload.github.com/jcmsj/sax-js/tar.gz/8d89bd0e6a75a442fbbe4e0f55ec64d9d3344bb3}
-    name: '@jcsj/sax'
-    version: 1.2.5
-    dev: false
-
-  github.com/jcmsj/xml-js/b2ccc832e3949c8ec9a702befb31d2b349fc22ef:
-    resolution: {tarball: https://codeload.github.com/jcmsj/xml-js/tar.gz/b2ccc832e3949c8ec9a702befb31d2b349fc22ef}
-    name: '@jcsj/xml-js'
-    version: 1.6.12
-    dependencies:
-      '@jcsj/sax': github.com/jcmsj/sax-js/8d89bd0e6a75a442fbbe4e0f55ec64d9d3344bb3
-    dev: false
