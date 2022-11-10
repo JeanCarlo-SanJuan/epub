@@ -25,13 +25,14 @@ export type EPUBProgressEvents = {
 };
 
 export class Epub {
+    static MIME = "application/epub+zip";
     info: trait.Info = {
         archive: null,
         container: null,
         mime: null,
         rootName: null
     }
-    metadata: trait.Metadata= {};
+    metadata: trait.Metadata = {};
     manifest: trait.Manifest = {}
     spine: trait.Spine | undefined;
     flow = new trait.Flow();
@@ -91,7 +92,7 @@ export class Epub {
         const id = "mimetype";
         const { file, data } = await this.readFile(id)
         this.info.mime = file;
-        MIMEError.unless({ id, actual: data as string, expected: "application/epub+zip" })
+        MIMEError.unless({ id, actual: data as string, expected: Epub.MIME})
     }
 
     async readFile(name: string, writer: trait.ChapterType = trait.ChapterType.text): Promise<trait.LoadedEntry> {
