@@ -1,7 +1,7 @@
 import { EpubBase } from ".";
 
 export async function matchMediaSources(epub: EpubBase, frag: DocumentFragment) {
-    for (const img of Array.from(frag.querySelectorAll<HTMLImageElement | SVGImageElement>("img, svg"))) {
+    for (const img of Array.from(frag.querySelectorAll<HTMLImageElement | SVGImageElement>("img, image"))) {
         //TODO: Allow a default image to be used when no src.
         let key: string | undefined;
         let src: string | undefined;
