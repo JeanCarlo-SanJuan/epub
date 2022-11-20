@@ -5,11 +5,11 @@ import { walkTOC } from "./walkTOC";
 import { Manifest } from "../traits";
 import { TableOfContents } from "./TableOfContents";
 
-export async function parseTOC(manifest:Manifest, toc_id:string, epub:Epub) {
-    let toc:TableOfContents;
-    const IDs:{[key:string]:string} = {};
-    Object.entries(manifest)
-        .map(([k, v]) => IDs[v.href] = k)
+export async function parseTOC(manifest: Manifest, toc_id: string, epub: Epub) {
+    let toc: TableOfContents;
+    const IDs = Object.entries(manifest)
+        .reduce((o, [k, v]) => { o[v.href] = k; return o }, 
+        {} as Record<string, string>)
 
     let item = manifest[toc_id] || manifest["toc"]
     const xml = await epub.zip2JS(item.href);
@@ -18,10 +18,10 @@ export async function parseTOC(manifest:Manifest, toc_id:string, epub:Epub) {
         path.pop();
         toc = walkNavMap(
             {
-            branch: xml.ncx.navMap.navPoint,
-            path, 
-            IDs,
-            level:0
+                branch: xml.ncx.navMap.navPoint,
+                path,
+                IDs,
+                level: 0
             }
             , manifest
         )

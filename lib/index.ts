@@ -26,13 +26,8 @@ export type EPUBProgressEvents = {
 
 export class Epub {
     static MIME = "application/epub+zip";
-    info: trait.Info = {
-        archive: null,
-        container: null,
-        mime: null,
-        rootName: null
-    }
-    metadata: trait.Metadata = {};
+    info: Partial<trait.Info> = {}
+    metadata: Partial<trait.Metadata> = {};
     manifest: trait.Manifest = {}
     spine: trait.Spine | undefined;
     flow = new trait.Flow();
@@ -65,7 +60,7 @@ export class Epub {
      **/
     async open(p: EPUBProgressEvents = {}) {
         this.progressEvents = p
-        if (this.info.archive == null)
+        if (this.info.archive === undefined)
             return;
 
         this.reader = new zip.ZipReader(new zip.BlobReader(this.info.archive))
@@ -112,7 +107,7 @@ export class Epub {
      *  On success, calls the rootfile parser
      **/
     async getRootFiles() {
-        if (this.info == undefined)
+        if (this.info === undefined)
             throw TypeError("No container file");
 
         const id = "meta-inf/container.xml"
@@ -139,7 +134,7 @@ export class Epub {
         this.handleRootFile();
     }
     async handleRootFile() {
-        if (this.info.rootName == null)
+        if (this.info.rootName === undefined)
             return;
 
         const entry = await this.readFile(this.info.rootName)
@@ -161,7 +156,7 @@ export class Epub {
     async getFileInArchive(name: string, isCaseSensitive = false): Promise<zip.Entry> {
         //Remove leading / for paths
         let fn = decodeURI(name[0] == '/' ? name.slice(1) : name);
-        if (isCaseSensitive == false) {
+        if (isCaseSensitive === false) {
             fn = fn.toLowerCase()
         }
         const entry = this.entries.find((n) => {
@@ -170,7 +165,7 @@ export class Epub {
 
             //Allow partial matches
             let eFN = n.filename;
-            if (isCaseSensitive == false) {
+            if (isCaseSensitive === false) {
                 eFN = eFN.toLowerCase()
             }
 
@@ -272,8 +267,8 @@ export class Epub {
     }
 
     searchManifestOrPanic(id: string) {
-        const l = this.manifest[id] || null
-        if (l == null)
+        const l = this.manifest[id]
+        if (l === undefined)
             throw new UnknownItemError(`Unkown manifest item: ${id}`);
 
         return l;
@@ -307,13 +302,12 @@ export class Epub {
 
         const r = new FileReader();
         return new Promise<string>((resolve, reject) => {
-            r.onload = (e) => {
-                let res = e.target?.result || null;
-                if (res == null) {
+            r.onload = e => {
+                let res = e.target?.result ?? undefined;
+                if (res === undefined) {
                     reject(r.error);
                     return
                 }
-
                 res = res.toString()
                 this.cache.setImage(id, res)
                 resolve(res)

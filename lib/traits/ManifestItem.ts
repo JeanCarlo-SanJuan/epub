@@ -5,6 +5,6 @@ export interface Item extends Object{
     [key:string]:any
 }
 
-export interface Manifest {
-    [key:string]:Item
+export interface Manifest extends Record<string, Item> {
+    
 }

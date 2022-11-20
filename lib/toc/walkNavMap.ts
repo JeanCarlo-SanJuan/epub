@@ -42,18 +42,18 @@ export function walkNavMap
             order,
             title,
             href,
-            id: IDs[href] || null,
+            id: IDs[href],
             "media-type": ""
         };
 
-        if (element.id == null) // use new one
+        if (element.id === undefined) // use new one
             element.id = part._attributes.id.trim() || "";
         else { // link existing object
             element = { ...manifest[element.id], title, order, level };
             element.navPoint = (part.navPoint) ?
                 walkNavMap(
                     {
-                        "branch": part.navPoint,
+                        branch: part.navPoint,
                         path,
                         IDs,
                         level: level + 1
