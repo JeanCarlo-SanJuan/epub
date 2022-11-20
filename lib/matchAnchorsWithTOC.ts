@@ -1,7 +1,7 @@
 import { TableOfContents } from "./toc/TableOfContents";
 
 /**
- * Replaces chapter links inside a `DocumentFragment` with the ids that can be used for referral in the TOC.
+ * Replaces chapter links inside a `DocumentFragment` with the ids from {@link TableOfContents}.
  */
 export function matchAnchorsWithTOC(frag:DocumentFragment, toc:TableOfContents) {
     frag.querySelectorAll("a").forEach(a => {

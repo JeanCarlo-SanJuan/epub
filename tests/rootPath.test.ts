@@ -1,4 +1,4 @@
-import * as r from "./roothPathInstance"
+import * as r from "./rootPathInstance"
 
 describe("using RootPath", () => {
     it("instantiates" , () => {

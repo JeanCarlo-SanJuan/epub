@@ -5,9 +5,6 @@ import { Item } from "./ManifestItem";
 export interface Spine extends Thing {
     toc:string,
     contents:Item[],
-    _attributes: {}|Thing & {
-        idref:string
-    }
 }
 
 export interface RawSpine extends Attribute {

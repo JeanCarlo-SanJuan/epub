@@ -5,7 +5,6 @@ export function parseSpine({itemref, _attributes}:RawSpine, rawManifest:Thing): 
         toc: "ncx",
         contents: [],
          ..._attributes, //Override the default props
-         _attributes: {}
     }
     if (itemref) {
         itemref = toArray(itemref)

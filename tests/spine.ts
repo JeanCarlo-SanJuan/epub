@@ -18,7 +18,6 @@ export const parsed: Spine = {
     },],
     toc: "ncx",
     "page-progression-direction": "ltr",
-    _attributes: {}
 }
 
 export const raw:RawSpine = {
