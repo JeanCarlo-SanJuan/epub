@@ -12,7 +12,7 @@ import { parseMetadata } from "./parseMetadata";
 import { parseSpine } from "./parseSpine";
 import { parseTOC } from "./toc/parseTOC";
 import { UnknownItemError } from "./error/UnkownItemError";
-import { matchAnchorsWithTOC } from "./matchAnchorsWithTOC";
+import { matchAnchorsWithFlow } from "./matchAnchorsWithTOC";
 import { removeInlineEvents } from "./removeInlineEvents";
 import { xmlToFragment } from "./xmlToFragment";
 import BookCache from "./BookCache";
@@ -60,14 +60,14 @@ export class Reader extends ZipReader<Blob> {
         MIMEError.unless({ id: Reader.TARGET, actual: data as string, expected: Reader.MIME })
     }
 
-    async read(name: string, writer: trait.ChapterType = trait.ChapterType.text): Promise<trait.LoadedEntry> {
+    async read(name: string, type?:string): Promise<trait.LoadedEntry> {
         const file = this.partialSearch(name);
 
         return {
             file,
             data: await file.getData(
-                this.determineWriter(writer)
-            )
+                this.determineWriter(type)
+            , {})
         }
     }
 
@@ -100,15 +100,12 @@ export class Reader extends ZipReader<Blob> {
 
     /**
      * @returns the appropriate zip writer
-     * @implNote using switch in case different writers would be used in the future.
      */
-    determineWriter(t: trait.ChapterType) {
-        switch (t) {
-            case trait.ChapterType.image:
-                return new BlobWriter("image/*")
-            default:
-                return new TextWriter("utf-8")
-        }
+    determineWriter(t?: string) {
+        if (t?.includes("image/"))
+            return new BlobWriter(t)
+        else
+            return new TextWriter("utf-8")
     }
 }
 
@@ -226,7 +223,7 @@ export class EpubBase extends Parser implements EpubParts {
 
         MIMEError.unless({ id, actual: elem["media-type"], expected: imageMIMEs })
 
-        return (await this.read(elem.href)).data.toString();
+        return (await this.read(elem.href, elem["media-type"])).data.toString();
     }
 
     /**
@@ -238,8 +235,7 @@ export class EpubBase extends Parser implements EpubParts {
         const item = this.searchManifestOrPanic(id)
         MIMEError.unless({ id, actual: item["media-type"].trim(), expected: /^image\//i })
 
-        const data = (await this.read(item.href, trait.ChapterType.image)).data as Blob
-
+        const data = (await this.read(item.href, item["media-type"])).data as Blob
         return URL.createObjectURL(data);
     }
 }
@@ -266,7 +262,7 @@ export class Epub extends EpubBase {
         const str = await this.getContentRaw(id);
         const frag = xmlToFragment(str, id);
         removeInlineEvents(frag);
-        matchAnchorsWithTOC(frag, this.toc)
+        matchAnchorsWithFlow(frag, this.flow)
         await matchMediaSources(this, frag)
         if (this.chapterTransformer instanceof Function) {
             try {
