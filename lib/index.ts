@@ -3,7 +3,6 @@ import { BlobReader, BlobWriter, Entry, TextWriter, ZipReader } from "@zip.js/zi
 import { MIMEError } from "./error/MIMEError";
 import { TableOfContents } from "./toc/TableOfContents";
 import * as trait from "./traits";
-import RootPath from "./RootPath";
 import EV from "./EV";
 import { ElementCompact, Options, xml2js } from "@jcsj/xml-js";
 import { parseFlow } from "./parseFlow";
@@ -30,6 +29,8 @@ export class Reader extends ZipReader<Blob> {
     entries: Entry[] = []
     static MIME = "application/epub+zip";
     static TARGET = "mimetype"
+    static CONTAINER_ID = "meta-inf/container.xml"
+    static OEBPS_ID = "application/oebps-package+xml"
     constructor(value: Blob) {
         super(new BlobReader(value));
     }
@@ -49,7 +50,7 @@ export class Reader extends ZipReader<Blob> {
             throw new Error("Empty archive!");
         }
 
-        this.container = await this.read(RootPath.CONTAINER_ID);
+        this.container = await this.read(Reader.CONTAINER_ID);
     }
     /**
      *  Finds a file named "mimetype" and check if the content
@@ -60,14 +61,14 @@ export class Reader extends ZipReader<Blob> {
         MIMEError.unless({ id: Reader.TARGET, actual: data as string, expected: Reader.MIME })
     }
 
-    async read(name: string, type?:string): Promise<trait.LoadedEntry> {
+    async read(name: string, type?: string): Promise<trait.LoadedEntry> {
         const file = this.partialSearch(name);
 
         return {
             file,
             data: await file.getData(
                 this.determineWriter(type)
-            , {})
+                , {})
         }
     }
 
@@ -117,7 +118,7 @@ export class Parser extends Reader {
         spaces: 4
     })
 
-    rootPath!: RootPath;
+    rootPath!: string;
     rootXML: ElementCompact = {};
     VERSION?: string;
     progressEvents: EPUBProgressEvents = {};
@@ -137,7 +138,19 @@ export class Parser extends Reader {
     async init() {
         await super.init()
         const container = await parseContainer(this)
-        this.rootPath = RootPath.parse(container)
+        this.rootPath = Parser.getRootPath(container)
+    }
+
+    static getRootPath(container:ElementCompact) {
+        if (!container.rootfiles || !container.rootfiles.rootfile)
+            throw TypeError("No rootfiles found");
+
+        const d: { "full-path": string, "media-type": string } =
+            container.rootfiles.rootfile._attributes;
+
+        MIMEError.unless({ id: Reader.CONTAINER_ID, actual: d["media-type"], expected: Reader.OEBPS_ID })
+
+        return d["full-path"];
     }
 }
 
@@ -172,7 +185,7 @@ export class EpubBase extends Parser implements EpubParts {
         await this.init()
     }
     async handleRootFile() {
-        const entry = await this.read(this.rootPath.fullPath)
+        const entry = await this.read(this.rootPath)
         this.rootXML = this.xml2js(entry.data.toString())
         this.emit(EV.root)
     }
@@ -186,7 +199,7 @@ export class EpubBase extends Parser implements EpubParts {
         this.metadata = parseMetadata(pkg.metadata)
         this.emit(EV.metadata)
 
-        this.manifest = parseManifest(pkg.manifest.item, this.rootPath)
+        this.manifest = parseManifest(pkg.manifest.item)
         this.emit(EV.manifest)
 
         this.spine = parseSpine(pkg.spine, this.manifest)
@@ -235,8 +248,8 @@ export class EpubBase extends Parser implements EpubParts {
         const item = this.searchManifestOrPanic(id)
         MIMEError.unless({ id, actual: item["media-type"].trim(), expected: /^image\//i })
 
-        const data = (await this.read(item.href, item["media-type"])).data as Blob
-        return URL.createObjectURL(data);
+        const entry = (await this.read(item.href, item["media-type"]))
+        return URL.createObjectURL(entry.data as Blob);
     }
 }
 
@@ -281,7 +294,7 @@ export class Epub extends EpubBase {
 }
 
 export async function parseContainer(p: Parser) {
-    const maybeContainer = await p.read(RootPath.CONTAINER_ID);
+    const maybeContainer = await p.read(Reader.CONTAINER_ID);
 
     return p.xml2js(maybeContainer.data
         .toString()
@@ -300,12 +313,29 @@ export class CachedEpubBase extends EpubBase {
     }
 
     async getContent(id: string) {
-        return this.cache.text[id] ?? super.getContent(id)
+        return cacheOrMiss(
+            this.cache.text,
+            super.getContent.bind(this),
+            id
+        )
     }
 
     async getImage(id: string) {
-        return this.cache.image[id] ?? super.getImage(id)
+        return cacheOrMiss(
+            this.cache.image,
+            super.getImage.bind(this),
+            id
+        )
     }
+}
+
+async function cacheOrMiss<T>(cache: Record<string, T>, cb: (id: string) => Promise<T>, id: string) {
+    if (cache[id]) {
+        return cache[id]
+    }
+    const result = await cb(id)
+    cache[id] = result
+    return result;
 }
 
 /**
@@ -319,10 +349,17 @@ export class CachedEpub extends Epub {
     }
 
     async getContent(id: string) {
-        return this.cache.text[id] ?? super.getContent(id)
+        return cacheOrMiss(
+            this.cache.text,
+            super.getContent.bind(this), id
+        )
     }
 
     async getImage(id: string) {
-        return this.cache.image[id] ?? super.getImage(id)
+        return cacheOrMiss(
+            this.cache.image,
+            super.getImage.bind(this),
+            id
+        )
     }
 }
