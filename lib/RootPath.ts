@@ -2,8 +2,8 @@ import { ElementCompact } from "@jcsj/xml-js";
 import { MIMEError } from "./error/MIMEError";
 
 export class RootPath {
-    private origin:string;
-    private str:string
+    public origin:string;
+    public str:string
     fullPath: string;
     static CONTAINER_ID = "meta-inf/container.xml"
     static OEBPS_ID = "application/oebps-package+xml"
@@ -34,12 +34,8 @@ export class RootPath {
 
 function alter(filepath:string, origin:string, prefix:string):string {
     filepath = filepath
-        .replace("../", "")
+        .replace("../", prefix)
         .replace(origin, "")
-
-    if (filepath.startsWith(prefix)) {
-        return filepath
-    }
     return prefix + filepath
 }
 export default RootPath;

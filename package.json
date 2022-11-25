@@ -1,7 +1,7 @@
 {
   "name": "@jcsj/epub",
   "private": false,
-  "version": "2.0.0-beta.2",
+  "version": "2.0.0-beta.3",
   "description": "An Epub parser for the web.",
   "main": "./lib/index.ts",
   "type": "module",
@@ -21,7 +21,7 @@
   "dependencies": {
     "@jcsj/arraymap": "^0.0.3",
     "@jcsj/xml-js": "^1.6.13",
-    "@zip.js/zip.js": "^2.6.54"
+    "@zip.js/zip.js": "^2.6.57"
   },
   "devDependencies": {
     "@jest/types": "^29.3.1",

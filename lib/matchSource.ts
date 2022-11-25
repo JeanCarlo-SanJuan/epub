@@ -16,12 +16,21 @@ export async function matchMediaSources(epub: EpubBase, frag: DocumentFragment) 
 
         if (src && key) {
             img.dataset.src = src;
-            src = epub.rootPath.alter(src)
-            for (const _id in epub.manifest) {
-                if (src == epub.manifest[_id].href) {
-                    img.setAttribute(key, await epub.getImage(_id));
+            let maybeID:string|undefined;
+            {
+                const parts = epub.rootPath.alter(src).split("/");
+                maybeID = parts[parts.length - 1];
+                if (maybeID === undefined)
+                    return;
+            }
+            for (const item of Object.values(epub.manifest)) {
+                if (item.href.includes(maybeID)) {
+                    img.setAttribute(key, await epub.getImage(item.id));
+                    return;
                 }
             }
+
+            throw Error(`COULD NOT FIND MEDIA ${src} IN MANIFEST`)
         }
     }
 }
