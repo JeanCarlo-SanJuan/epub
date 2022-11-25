@@ -15,8 +15,8 @@ export async function matchMediaSources(epub: EpubBase, frag: DocumentFragment) 
         }
 
         if (src && key) {
-            src = epub.rootPath.alter(src)
             img.dataset.src = src;
+            src = epub.rootPath.alter(src)
             for (const _id in epub.manifest) {
                 if (src == epub.manifest[_id].href) {
                     img.setAttribute(key, await epub.getImage(_id));
