@@ -1,3 +1,3 @@
-export interface Thing  extends Object{
-    [key:string]:any
+export interface Thing extends Object {
+    [key: string]: any
 }

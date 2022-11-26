@@ -1,4 +1,3 @@
-import { TableOfContents } from "./toc/TableOfContents";
 import { Flow } from "./traits";
 
 /**

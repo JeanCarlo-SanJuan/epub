@@ -12,7 +12,7 @@ import { parseSpine } from "./parseSpine";
 import { parseTOC } from "./toc/parseTOC";
 import { UnknownItemError } from "./error/UnkownItemError";
 import { matchAnchorsWithFlow } from "./matchAnchorsWithTOC";
-import { removeInlineEvents } from "./removeInlineEvents";
+import { removeInlineEventsInFragment } from "./removeInlineEvents";
 import { xmlToFragment } from "./xmlToFragment";
 import BookCache from "./BookCache";
 import { matchMediaSources } from "./matchSource";
@@ -110,7 +110,8 @@ export class Reader extends ZipReader<Blob> {
     }
 }
 
-export interface EPUBProgressEvents extends Partial<Record<EV, Function>> { }
+// eslint-disable-next-line @typescript-eslint/no-empty-interface
+export interface EPUBProgressEvents extends Partial<Record<EV, (ev:EV)=>void>> { }
 
 export class Parser extends Reader {
     static OPTIONS: Options.XML2JSON = Object.freeze({
@@ -191,7 +192,7 @@ export class EpubBase extends Parser implements EpubParts {
     }
 
     emit(ev: EV) {
-        this.progressEvents[ev]?.()
+        this.progressEvents[ev]?.(ev)
     }
 
     async parseRootFile({ package: pkg }: { package: trait.RootFile }) {
@@ -274,7 +275,7 @@ export class Epub extends EpubBase {
     async getContent(id: string): Promise<string> {
         const str = await this.getContentRaw(id);
         const frag = xmlToFragment(str, id);
-        removeInlineEvents(frag);
+        removeInlineEventsInFragment(frag);
         matchAnchorsWithFlow(frag, this.flow)
         await matchMediaSources(this, frag)
         if (this.chapterTransformer instanceof Function) {

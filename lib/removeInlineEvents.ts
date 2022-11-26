@@ -1,10 +1,11 @@
-const onEvent = /^on.+/i;
+export function removeInlineEventsInFragment(frag: DocumentFragment) {
+    frag.querySelectorAll("*").forEach(removeInlineEvents)
+}
 
-export function removeInlineEvents(frag:DocumentFragment) {
-    frag.querySelectorAll("*").forEach(elem => {
-        for (const {name} of Object.values(elem.attributes)) {
-            if (onEvent.test(name))
-                elem.removeAttribute(name);
+export function removeInlineEvents(elem:Element) {
+    for (const { name } of Object.values(elem.attributes)) {
+        if (name.startsWith("on")) {
+            elem.removeAttribute(name);
         }
-    })
+    }
 }

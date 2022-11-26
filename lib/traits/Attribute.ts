@@ -1,6 +1,6 @@
-import {Thing} from "./Thing";
+import { Thing } from "./Thing";
 
 export interface Attribute extends Thing {
     _attributes: any
-    [key:string]:any
+    [key: string]: any
 }

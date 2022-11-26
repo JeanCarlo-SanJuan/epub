@@ -1,13 +1,13 @@
 import { Thing } from "./Thing"
 
-export interface Metadata {
-    creator:string,
-    UUID:string,
-    ISBN:string
-    [key:string]:any
-    language:string,
-    date:string|any,
-    description?:string,
-    subject?:string|Thing[],
-    title:string
+export interface Metadata extends Thing {
+    creator: string,
+    UUID: string,
+    ISBN: string
+    [key: string]: any
+    language: string,
+    date: string | any,
+    description?: string,
+    subject?: string | Thing[],
+    title: string
 }

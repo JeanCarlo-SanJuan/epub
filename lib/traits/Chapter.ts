@@ -1,7 +1,7 @@
 import { Item } from "./ManifestItem";
 
 export interface Chapter extends Item {
-    title:string,
+    title: string,
     order: number
 }
 

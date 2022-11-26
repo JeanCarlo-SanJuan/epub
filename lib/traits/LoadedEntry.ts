@@ -1,5 +1,5 @@
-import { Entry} from "@zip.js/zip.js";
+import { Entry } from "@zip.js/zip.js";
 export interface LoadedEntry {
     file: Entry
-    data: string|Blob
+    data: string | Blob
 }
