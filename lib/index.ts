@@ -16,6 +16,7 @@ import { removeInlineEventsInFragment } from "./removeInlineEvents";
 import { xmlToFragment } from "./xmlToFragment";
 import BookCache from "./BookCache";
 import { matchMediaSources } from "./matchSource";
+import { Item } from "./traits";
 
 export interface EpubParts {
     metadata: Partial<trait.Metadata>;
@@ -219,6 +220,22 @@ export class EpubBase extends Parser implements EpubParts {
         }
     }
 
+    /**
+     * TODO: Use TS Array.filter definition
+     */
+    filter(predicate: (value: trait.Item, index: number, array: trait.Item[]) => boolean) {
+        return Object.values(this.manifest).filter(predicate)
+    }
+    matchAll(re:RegExp|string) {
+        let cb: (item:trait.Item) => boolean;
+        if (typeof re === "string") {
+            cb = item => item.id.includes(re)
+        } else {
+            cb = item => re.test(item.id)
+        }
+        return this.filter(cb)
+    }
+
     searchManifestOrPanic(id: string) {
         const l = this.manifest[id]
         if (l === undefined)
@@ -233,7 +250,7 @@ export class EpubBase extends Parser implements EpubParts {
      **/
     async getContent(id: string): Promise<string> {
         const elem = this.searchManifestOrPanic(id)
-        const imageMIMEs = /^(application\/xhtml\+xml|image\/svg\+xml)$/i;
+        const imageMIMEs = /^(application\/xhtml\+xml|image\/svg\+xml|text\/css)$/i;
 
         MIMEError.unless({ id, actual: elem["media-type"], expected: imageMIMEs })
 
