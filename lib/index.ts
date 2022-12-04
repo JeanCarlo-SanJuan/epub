@@ -16,7 +16,6 @@ import { removeInlineEventsInFragment } from "./removeInlineEvents";
 import { xmlToFragment } from "./xmlToFragment";
 import BookCache from "./BookCache";
 import { matchMediaSources } from "./matchSource";
-import { Item } from "./traits";
 
 export interface EpubParts {
     metadata: Partial<trait.Metadata>;
@@ -112,12 +111,12 @@ export class Reader extends ZipReader<Blob> {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
-export interface EPUBProgressEvents extends Partial<Record<EV, (ev:EV)=>void>> { }
+export interface EPUBProgressEvents extends Partial<Record<EV, (ev: EV) => void>> { }
 
 export class Parser extends Reader {
     static OPTIONS: Options.XML2JSON = Object.freeze({
         compact: true,
-        spaces: 4
+        spaces: 0
     })
 
     rootPath!: string;
@@ -143,7 +142,7 @@ export class Parser extends Reader {
         this.rootPath = Parser.getRootPath(container)
     }
 
-    static getRootPath(container:ElementCompact) {
+    static getRootPath(container: ElementCompact) {
         if (!container.rootfiles || !container.rootfiles.rootfile)
             throw TypeError("No rootfiles found");
 
@@ -226,13 +225,11 @@ export class EpubBase extends Parser implements EpubParts {
     filter(predicate: (value: trait.Item, index: number, array: trait.Item[]) => boolean) {
         return Object.values(this.manifest).filter(predicate)
     }
-    matchAll(re:RegExp|string) {
-        let cb: (item:trait.Item) => boolean;
-        if (typeof re === "string") {
-            cb = item => item.id.includes(re)
-        } else {
-            cb = item => re.test(item.id)
-        }
+    matchAll(re: RegExp | string) {
+        const cb: (item: trait.Item) => boolean = (typeof re === "string") ?
+            item => item.id.includes(re)
+            : item => re.test(item.id)
+            
         return this.filter(cb)
     }
 
@@ -250,9 +247,9 @@ export class EpubBase extends Parser implements EpubParts {
      **/
     async getContent(id: string): Promise<string> {
         const elem = this.searchManifestOrPanic(id)
-        const imageMIMEs = /^(application\/xhtml\+xml|image\/svg\+xml|text\/css)$/i;
+        const allowedMIMES = /^(application\/xhtml\+xml|image\/svg\+xml|text\/css)$/i;
 
-        MIMEError.unless({ id, actual: elem["media-type"], expected: imageMIMEs })
+        MIMEError.unless({ id, actual: elem["media-type"], expected: allowedMIMES })
 
         return (await this.read(elem.href, elem["media-type"])).data.toString();
     }
@@ -272,7 +269,7 @@ export class EpubBase extends Parser implements EpubParts {
 }
 
 export type UnaryFX<T, RT> = (v: T) => RT;
-export type ChapterTransformer = UnaryFX<DocumentFragment, HTMLElement>;
+export type ChapterTransformer = UnaryFX<DocumentFragment,string>;
 
 /**
  * @desc `Includes sanitation and aligns the parsed content to the epub parts, ready to use in the web.
@@ -297,7 +294,7 @@ export class Epub extends EpubBase {
         await matchMediaSources(this, frag)
         if (this.chapterTransformer instanceof Function) {
             try {
-                return this.chapterTransformer(frag).innerHTML;
+                return this.chapterTransformer(frag);
             } catch (e) {
                 console.log("Transform failed: ", id, e);
             }

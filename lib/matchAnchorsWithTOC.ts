@@ -1,9 +1,9 @@
 import { Flow } from "./traits";
 
 /**
- * Replaces chapter links inside a `DocumentFragment` with the ids from {@link TableOfContents}.
+ * Replaces chapter links inside a `DocumentFragment` with the ids from {@link Flow}.
  */
-export function matchAnchorsWithFlow(frag:DocumentFragment, flow:Flow) {
+export function matchAnchorsWithFlow(frag: DocumentFragment, flow: Flow) {
     const keys = [...flow.keys()]
     for (const a of Array.from(frag.querySelectorAll("a"))) {
         a.href = a.href
