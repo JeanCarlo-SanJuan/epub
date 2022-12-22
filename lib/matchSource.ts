@@ -1,6 +1,7 @@
-import { EpubBase } from ".";
+import { DataReader } from ".";
+import { Manifest } from "./traits";
 
-export async function matchMediaSources<E extends EpubBase>(epub: E, frag: DocumentFragment) {
+export async function matchMediaSources<D extends DataReader>(d:D, m:Manifest, frag: DocumentFragment) {
     for (const img of Array.from(frag.querySelectorAll<HTMLImageElement | SVGImageElement>("img, image"))) {
         //TODO: Allow a default image to be used when no src.
         const { key, src } = getSource(img);
@@ -8,13 +9,13 @@ export async function matchMediaSources<E extends EpubBase>(epub: E, frag: Docum
         if (src && key) {
             img.dataset.src = src;
 
-            const item = Object.values(epub.manifest).find(item =>
+            const item = Object.values(m).find(item =>
                 src?.endsWith(item.href)
             )
 
             if (item) {
                 img.setAttribute(key,
-                    await epub.getImage(item.id)
+                    await d.getImage(item.id)
                 );
                 continue;
             }
