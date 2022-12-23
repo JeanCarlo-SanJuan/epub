@@ -3,8 +3,9 @@ import { walkNavMap } from "./walkNavMap";
 import { walkTOC } from "./walkTOC";
 import { Manifest } from "../traits";
 import { TableOfContents } from "./TableOfContents";
-import { Parser } from "Parser";
-export async function parseTOC<R>(manifest: Manifest, toc_id: string, parser:Parser<R>) {
+import { Parser } from "../Parser";
+import { ReaderLike } from "../Reader";
+export async function parseTOC<R extends ReaderLike>(manifest: Manifest, toc_id: string, parser:Parser<R>) {
     let toc: TableOfContents;
     const IDs = Object.entries(manifest)
         .reduce((o, [k, v]) => { o[v.href] = k; return o }, 

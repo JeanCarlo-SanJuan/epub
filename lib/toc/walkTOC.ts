@@ -5,7 +5,7 @@ export function walkTOC(body: Thing, manifest: Manifest): TableOfContents {
     let order = 0;
     const toc = new TableOfContents()
     for (const p of body.p) {
-        let id = p._attributes.id
+        const id = p._attributes.id
             .replace(/toc(-|:)/i, "")
             .trim()
 
