@@ -9,6 +9,10 @@ export type ChapterTransformer = (d:DocumentFragment)=> string;
 export interface SanitizedRetrieverArgs<R extends ReaderLike> extends RetrieverArgs<R> {
     chapterTransformer?: ChapterTransformer
 }
+
+/**
+ * Adds sanitization with the data from DataReader and makes it usable for the web.
+ */
 export async function SanitizedEpub(a: EpubArgs & {chapterTransformer?:ChapterTransformer}): Promise<CleanEpub> {
     const base = await open(a);
     const r = await SanitizedRetriever({...base, chapterTransformer:a.chapterTransformer});
@@ -26,17 +30,12 @@ export interface CleanEpub extends Epub {
 
 export async function SanitizedRetriever<R extends ReaderLike>({parser, parts, chapterTransformer}: SanitizedRetrieverArgs<R>) {
     const r = await Retriever({parser, parts});
-
-    async function getContentRaw(id: string) {
-        return r.getContent(id);
-    }
-
     /**
      * @override
      * @implNote removes inline events and matches anchors, links, and srcs with the manifest data. May also provide a chapter transformer for even more customization.
      */
     async function getContent(id: string): Promise<string> {
-        const str = await getContentRaw(id);
+        const str = await r.getContent(id);
         const frag = xmlToFragment(str, id);
         removeInlineEventsInFragment(frag);
         matchAnchorsWithFlow(frag, parts.flow);
@@ -55,7 +54,7 @@ export async function SanitizedRetriever<R extends ReaderLike>({parser, parts, c
     return {
         ...r,
         chapterTransformer,
-        getContentRaw,
+        getContentRaw:r.getContent,
         getContent
     }
 }
