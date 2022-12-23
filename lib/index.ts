@@ -2,7 +2,7 @@ import EV from "./EV";
 import * as trait from "./traits";
 import { ElementCompact, Options, xml2jsCompact } from "@jcsj/xml-js";
 import { Parser } from "./Parser";
-import { EpubParts, ProgressEvents } from "./EpubParts";
+import { Parts, ProgressEvents } from "./Parts";
 import { MIMEError } from "./error/MIMEError";
 import { parseManifest } from "./parseManifest";
 import { parseMetadata } from "./parseMetadata";
@@ -27,7 +27,7 @@ export interface DataReader {
     getContent(id: string): Promise<string>;
     getImage(id: string): Promise<string>;
 }
-export interface EpubSearcher {
+export interface Searcher {
     filter(predicate: (
         value: trait.Item,
         index: number, array:
@@ -36,8 +36,8 @@ export interface EpubSearcher {
     matchAll(re: RegExp | string): trait.Item[];
     searchManifestOrPanic(id: string): trait.Item;
 }
-export interface Epub extends DataReader, EpubSearcher {
-    parts: EpubParts;
+export interface Epub extends DataReader, Searcher {
+    parts: Parts;
     parser: JSParser;
 }
 
@@ -51,8 +51,8 @@ export async function open({ blob, events }: EpubArgs) {
     const parser = await parse(blob, undefined);
     emit(EV.root, parser.root_xml);
 
-    async function parseRootFile({ package: pkg }: { package: trait.RootFile }): Promise<EpubParts> {
-        const parts: EpubParts = {
+    async function parseRootFile({ package: pkg }: { package: trait.RootFile }): Promise<Parts> {
+        const parts: Parts = {
             metadata: {},
             manifest: {},
             spine: {
@@ -89,20 +89,25 @@ export async function open({ blob, events }: EpubArgs) {
     }
 
     //TODO: Remove coercion
-    const parts = await parseRootFile(parser.root_xml as any);
     return {
-        parts,
+        parts:await parseRootFile(parser.root_xml as any),
         parser
     }
 }
 
-export interface RetrieverProps<R extends ReaderLike> {
-    parts: EpubParts;
+export interface RetrieverArgs<R extends ReaderLike> {
+    parts: Parts;
     parser: Parser<R>;
 }
 
-export async function Retriever<R extends ReaderLike>({ parts, parser }: RetrieverProps<R>): Promise<EpubSearcher & DataReader> {
-    const r = {
+export interface Retriever extends Searcher, DataReader {
+
+}
+
+export const ALLOWED_MIMES = /^(application\/xhtml\+xml|image\/svg\+xml|text\/css)$/i;
+
+export async function Retriever<R extends ReaderLike>({ parts, parser }: RetrieverArgs<R>): Promise<Retriever> {
+    const r:Retriever = {
         /**
         * TODO: Use TS Array.filter definition
         */
@@ -131,9 +136,8 @@ export async function Retriever<R extends ReaderLike>({ parts, parser }: Retriev
          **/
         async getContent(id: string): Promise<string> {
             const elem = this.searchManifestOrPanic(id)
-            const allowedMIMES = /^(application\/xhtml\+xml|image\/svg\+xml|text\/css)$/i;
 
-            MIMEError.unless({ id, actual: elem["media-type"], expected: allowedMIMES })
+            MIMEError.unless({ id, actual: elem["media-type"], expected: ALLOWED_MIMES })
 
             return (await parser.reader.read(elem.href, elem["media-type"])).data.toString();
         },
@@ -165,7 +169,7 @@ export async function epub(a: EpubArgs): Promise<Epub> {
 }
 
 export function prepareEmit(listeners: ProgressEvents) {
-    return (ev: EV, ...args:any) => listeners[ev]?.(...args)
+    return (ev: EV, ...args:any[]) => listeners[ev]?.(...args)
 }
 
 export async function parse(b: Blob, o: Options.XML2JSON = {

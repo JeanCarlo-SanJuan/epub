@@ -2,8 +2,7 @@ import EV from "./EV";
 import { TableOfContents } from "./toc/TableOfContents";
 import * as trait from "./traits";
 
-
-export interface EpubParts {
+export interface Parts {
     metadata: Partial<trait.Metadata>;
     manifest: trait.Manifest;
     spine: trait.Spine;
@@ -13,11 +12,11 @@ export interface EpubParts {
 }
 
 /**
- * Keys here correspond {@link EpubParts}
+ * Keys here correspond to {@link Parts}
  */
 export interface ProgressEvents extends
     Partial<Record<EV, any>> { 
-    root?:()=>void,
+    root?:(r:string)=>void,
     manifest?:(m:trait.Manifest)=>void,
     metadata?:(m:trait.Metadata)=>void,
     spine?:(s:trait.Spine)=>void,

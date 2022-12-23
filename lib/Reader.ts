@@ -2,6 +2,9 @@ import { BlobReader, BlobWriter, Entry, TextWriter, ZipReader } from "@zip.js/zi
 import { MIMEError } from "./error/MIMEError";
 import * as trait from "./traits";
 
+/**
+ * Contains strings that must be matched as the Epub is parsed.
+ */
 export enum INFO {
     MIME = "application/epub+zip",
     TARGET = "mimetype",

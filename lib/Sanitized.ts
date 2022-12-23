@@ -1,12 +1,12 @@
 import { ReaderLike } from "./Reader";
-import { Retriever, open, EpubArgs, Epub, RetrieverProps } from ".";
+import { Retriever, open, EpubArgs, Epub, RetrieverArgs } from ".";
 import { xmlToFragment } from "./xmlToFragment";
 import { removeInlineEventsInFragment } from "./removeInlineEvents";
 import { matchAnchorsWithFlow } from "./matchAnchorsWithTOC";
 import { matchMediaSources } from "./matchSource";
 export type ChapterTransformer = (d:DocumentFragment)=> string;
 
-export interface SanitizedRetrieverArgs<R extends ReaderLike> extends RetrieverProps<R> {
+export interface SanitizedRetrieverArgs<R extends ReaderLike> extends RetrieverArgs<R> {
     chapterTransformer?: ChapterTransformer
 }
 export async function SanitizedEpub(a: EpubArgs & {chapterTransformer?:ChapterTransformer}): Promise<CleanEpub> {
