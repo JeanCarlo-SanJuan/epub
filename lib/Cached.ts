@@ -1,7 +1,7 @@
 import BookCache from "./BookCache";
 import { cacheOrMiss } from "./cacheOrMiss";
 import { Epub, epub, EpubArgs } from ".";
-import { SanitizedEpub } from "./Sanitized";
+import { SanitizedEpub } from "./sanitize";
 
 export const MemoizedEpub = prepareMemo(epub);
 export const MemoizedEpubAndSanitized = prepareMemo(SanitizedEpub);

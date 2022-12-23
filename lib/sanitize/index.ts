@@ -1,5 +1,5 @@
-import { ReaderLike } from "./Reader";
-import { Retriever, open, EpubArgs, Epub, RetrieverArgs } from ".";
+import { ReaderLike } from "../Reader";
+import { Retriever, open, EpubArgs, Epub, RetrieverArgs } from "..";
 import { xmlToFragment } from "./xmlToFragment";
 import { removeInlineEventsInFragment } from "./removeInlineEvents";
 import { matchAnchorsWithFlow } from "./matchAnchorsWithTOC";

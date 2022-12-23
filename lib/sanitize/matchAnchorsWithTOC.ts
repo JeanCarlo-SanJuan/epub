@@ -1,4 +1,4 @@
-import { Flow } from "./traits";
+import { Flow } from "../traits";
 
 /**
  * Replaces chapter links inside a `DocumentFragment` with the ids from {@link Flow}.

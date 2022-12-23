@@ -1,5 +1,5 @@
-import { DataReader } from ".";
-import { Manifest } from "./traits";
+import { DataReader } from "..";
+import { Manifest } from "../traits";
 
 export async function matchMediaSources<D extends DataReader>(d:D, m:Manifest, frag: DocumentFragment) {
     for (const img of Array.from(frag.querySelectorAll<HTMLImageElement | SVGImageElement>("img, image"))) {
