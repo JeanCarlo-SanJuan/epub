@@ -1,4 +1,4 @@
-const raw = [
+export const raw = [
     {
         "id": "cover",
         "href": "oebps/Text/cover.xhtml",

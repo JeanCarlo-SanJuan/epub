@@ -13,15 +13,12 @@ import { INFO, read, Reader, ReaderLike } from "./Reader";
 import { TableOfContents } from "./toc/TableOfContents";
 import { UnknownItemError } from "./error/UnkownItemError";
 
-export interface BuilderParser<R extends ReaderLike> extends Parser<R> {
+export interface EpubZipParser extends Parser<Reader> {
     container: ElementCompact,
-    root_path: string,
-}
-
-export interface JSParser extends BuilderParser<Reader> {
-    container: ElementCompact,
-    root_path: string,
-    root_xml: ElementCompact
+    root: {
+        path:string,
+        xml:ElementCompact
+    }
 }
 export interface DataReader {
     getContent(id: string): Promise<string>;
@@ -38,59 +35,70 @@ export interface Searcher {
 }
 export interface Epub extends DataReader, Searcher {
     parts: Parts;
-    parser: JSParser;
+    parser: EpubZipParser;
 }
 
 export interface EpubArgs {
     blob: Blob;
     events: ProgressEvents;
+    rootFileParser?:typeof parseRootFile;
+    createParser?:typeof parse,
 }
-export async function open({ blob, events }: EpubArgs) {
+
+async function parseRootFile<R extends ReaderLike>(
+    { package: pkg }: { package: trait.RootFile }, 
+    { 
+        emit, 
+        parser 
+    }: { 
+        emit: ReturnType<typeof prepareEmit>, 
+        parser: Parser<R> }
+    ): Promise<Parts> {
+
+    const parts: Parts = {
+        metadata: parseMetadata(pkg.metadata),
+        manifest: {},
+        spine: {
+            toc: "",
+            contents: []
+        },
+        flow: new trait.Flow(),
+        toc: new TableOfContents(),
+        version: pkg._attributes.version ?? "2.0"
+    }
+
+    emit(EV.metadata, parts.metadata);
+
+    parts.manifest = parseManifest(pkg.manifest.item);
+    emit(EV.manifest, parts.manifest);
+
+    parts.spine = parseSpine(pkg.spine, parts.manifest);
+    emit(EV.spine, parts.spine);
+
+    parts.flow = parseFlow(parts.spine.contents);
+    emit(EV.flow, parts.flow);
+
+    parts.toc = await parseTOC(parts.manifest, parts.spine.toc, parser);
+
+    if (parts.toc) {
+        emit(EV.toc, parts.toc);
+    } else {
+        throw TypeError("NO TOC")
+    }
+
+    emit(EV.loaded, parts);
+    return parts;
+}
+
+export async function open({ blob, events, rootFileParser=parseRootFile,createParser=parse }: EpubArgs) {
     const emit = prepareEmit(events);
 
-    const parser = await parse(blob, undefined);
-    emit(EV.root, parser.root_xml);
-
-    async function parseRootFile({ package: pkg }: { package: trait.RootFile }): Promise<Parts> {
-        const parts: Parts = {
-            metadata: {},
-            manifest: {},
-            spine: {
-                toc: "",
-                contents: []
-            },
-            flow: new trait.Flow(),
-            toc: new TableOfContents(),
-            version: pkg._attributes.version ?? "2.0"
-        }
-
-        parts.metadata = parseMetadata(pkg.metadata);
-        emit(EV.metadata, parts.metadata);
-
-        parts.manifest = parseManifest(pkg.manifest.item);
-        emit(EV.manifest, parts.manifest);
-
-        parts.spine = parseSpine(pkg.spine, parts.manifest);
-        emit(EV.spine, parts.spine);
-
-        parts.flow = parseFlow(parts.spine.contents);
-        emit(EV.flow, parts.flow);
-
-        parts.toc = await parseTOC(parts.manifest, parts.spine.toc, parser);
-
-        if (parts.toc) {
-            emit(EV.toc, parts.toc);
-            emit(EV.loaded);
-        } else {
-            throw TypeError("NO TOC")
-        }
-
-        return parts;
-    }
+    const parser = await createParser(blob, undefined);
+    emit(EV.root, parser.root.xml);
 
     //TODO: Remove coercion
     return {
-        parts:await parseRootFile(parser.root_xml as any),
+        parts: await rootFileParser(parser.root.xml as any, { emit, parser }),
         parser
     }
 }
@@ -106,8 +114,11 @@ export interface Retriever extends Searcher, DataReader {
 
 export const ALLOWED_MIMES = /^(application\/xhtml\+xml|image\/svg\+xml|text\/css)$/i;
 
-export async function Retriever<R extends ReaderLike>({ parts, parser }: RetrieverArgs<R>): Promise<Retriever> {
-    const r:Retriever = {
+/**
+ * Provides convenience functions for searching entries from the manifest and reading the data from these.
+ */
+export function Retriever<R extends ReaderLike>({ parts, parser }: RetrieverArgs<R>): Retriever {
+    return {
         /**
         * TODO: Use TS Array.filter definition
         */
@@ -155,49 +166,50 @@ export async function Retriever<R extends ReaderLike>({ parts, parser }: Retriev
             return URL.createObjectURL(entry.data as Blob);
         },
     };
-
-    return r;
 }
+
 export async function epub(a: EpubArgs): Promise<Epub> {
     const base = await open(a);
-    const r = await Retriever(base);
 
     return {
         ...base,
-        ...r
+        ...Retriever(base)
     };
 }
 
 export function prepareEmit(listeners: ProgressEvents) {
-    return (ev: EV, ...args:any[]) => listeners[ev]?.(...args)
+    return (ev: EV, ...args: any[]) => listeners[ev]?.(...args)
 }
 
+/**
+ * Wraps `Reader` with an object that can convert between zip -> xml -> js and that holds the root path of the zip and the epub's root xml.
+ */
 export async function parse(b: Blob, o: Options.XML2JSON = {
     compact: true,
     spaces: 0
-}): Promise<JSParser> {
-    const r = await read(b);
-    const p: Parser<Reader> = {
-        reader: r,
+}): Promise<EpubZipParser> {
+    const reader = await read(b);
+    const p: EpubZipParser = {
+        reader,
+        container: {},
+        root: {
+            path:"",
+            xml:{},
+        },
         xml2js(data: string): ElementCompact {
-            return xml2jsCompact(data, o)
+            return xml2jsCompact(data, o);
         },
         async zip2js(name: string) {
-            const { data } = await r.read(name);
+            const { data } = await reader.read(name);
             return this.xml2js(data as string);
-        }
+        },
     }
 
-    const container = await parseContainer(p);
-    const root_path = getRootPath(container);
-    const root_xml = await handleRootfile(r, p.xml2js, root_path);
+    p.container = await parseContainer(p);
+    p.root.path = getRootPath(p.container);
+    p.root.xml = await handleRootfile(reader, p.xml2js, p.root.path)
 
-    return {
-        ...p,
-        container,
-        root_path,
-        root_xml
-    }
+    return p;
 }
 
 export async function handleRootfile(r: ReaderLike, xml2js: typeof xml2jsCompact, root_path: string) {

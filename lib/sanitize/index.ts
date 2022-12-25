@@ -15,7 +15,7 @@ export interface SanitizedRetrieverArgs<R extends ReaderLike> extends RetrieverA
  */
 export async function SanitizedEpub(a: EpubArgs & {chapterTransformer?:ChapterTransformer}): Promise<CleanEpub> {
     const base = await open(a);
-    const r = await SanitizedRetriever({...base, chapterTransformer:a.chapterTransformer});
+    const r = SanitizedRetriever({...base, chapterTransformer:a.chapterTransformer});
 
     return {
         ...base,
@@ -28,8 +28,8 @@ export interface CleanEpub extends Epub {
     getContentRaw: (id: string) => Promise<string>;
 }
 
-export async function SanitizedRetriever<R extends ReaderLike>({parser, parts, chapterTransformer}: SanitizedRetrieverArgs<R>) {
-    const r = await Retriever({parser, parts});
+export function SanitizedRetriever<R extends ReaderLike>({parser, parts, chapterTransformer}: SanitizedRetrieverArgs<R>) {
+    const r = Retriever({parser, parts});
     /**
      * @override
      * @implNote removes inline events and matches anchors, links, and srcs with the manifest data. May also provide a chapter transformer for even more customization.
