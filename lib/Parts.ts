@@ -16,10 +16,11 @@ export interface Parts {
  */
 export interface ProgressEvents extends
     Partial<Record<EV, any>> { 
-    root?:(r:string)=>void,
+    root?:(root_path:string)=>void,
     manifest?:(m:trait.Manifest)=>void,
     metadata?:(m:trait.Metadata)=>void,
     spine?:(s:trait.Spine)=>void,
     flow?:(f:trait.Flow)=>void,
-    toc?:(t:TableOfContents)=>void
+    toc?:(t:TableOfContents)=>void,
+    loaded?:(p:Parts)=>void,
 }
