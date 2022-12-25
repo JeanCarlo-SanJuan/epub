@@ -59,7 +59,7 @@ export async function open({ blob, events }: EpubArgs) {
                 toc: "",
                 contents: []
             },
-            flow: new trait.Flow,
+            flow: new trait.Flow(),
             toc: new TableOfContents(),
             version: pkg._attributes.version ?? "2.0"
         }
