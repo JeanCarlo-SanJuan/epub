@@ -52,13 +52,11 @@ export class Reader extends ZipReader<Blob> implements ReaderLike {
 
     async read(name: string, type?: string): Promise<trait.LoadedEntry> {
         const file = this.partialSearch(name);
+        (file as trait.LoadedEntry).data = await file.getData(
+            this.determineWriter(type),
+            {});
 
-        return {
-            file,
-            data: await file.getData(
-                this.determineWriter(type),
-                {})
-        };
+        return file as trait.LoadedEntry;
     }
 
     prepareGet(name: string) {
