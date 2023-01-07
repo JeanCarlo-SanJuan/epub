@@ -90,6 +90,9 @@ async function parseRootFile<R extends ReaderLike>(
     return parts;
 }
 
+/**
+ * Opens an Epub
+ */
 export async function open({ blob, events, rootFileParser=parseRootFile,createParser=parse }: EpubArgs) {
     const emit = prepareEmit(events);
 
@@ -177,7 +180,7 @@ export async function epub(a: EpubArgs): Promise<Epub> {
     };
 }
 
-export function prepareEmit(listeners: ProgressEvents) {
+export function prepareEmit<T extends object>(listeners: T) {
     return (ev: EV, ...args: any[]) => listeners[ev]?.(...args)
 }
 
@@ -188,9 +191,8 @@ export async function parse(b: Blob, o: Options.XML2JSON = {
     compact: true,
     spaces: 0
 }): Promise<EpubZipParser> {
-    const reader = await read(b);
     const p: EpubZipParser = {
-        reader,
+        reader:await read(b),
         container: {},
         root: {
             path:"",
@@ -200,14 +202,14 @@ export async function parse(b: Blob, o: Options.XML2JSON = {
             return xml2jsCompact(data, o);
         },
         async zip2js(name: string) {
-            const { data } = await reader.read(name);
+            const { data } = await this.reader.read(name);
             return this.xml2js(data as string);
         },
     }
 
     p.container = await parseContainer(p);
     p.root.path = getRootPath(p.container);
-    p.root.xml = await handleRootfile(reader, p.xml2js, p.root.path)
+    p.root.xml = await handleRootfile(p.reader, p.xml2js, p.root.path)
 
     return p;
 }
@@ -238,7 +240,6 @@ export async function parseContainer<R extends ReaderLike>(p: Parser<R>) {
 
     return p.xml2js(maybeContainer.data
         .toString()
-        .toLowerCase()
         .trim()
     ).container as ElementCompact;
 }

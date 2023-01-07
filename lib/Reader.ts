@@ -8,7 +8,7 @@ import * as trait from "./traits";
 export enum INFO {
     MIME = "application/epub+zip",
     TARGET = "mimetype",
-    CONTAINER_ID = "meta-inf/container.xml",
+    CONTAINER_ID = "META-INF/container.xml",
     OEBPS_ID = "application/oebps-package+xml",
 }
 
@@ -66,7 +66,7 @@ export class Reader extends ZipReader<Blob> implements ReaderLike {
             if (entry)
                 return entry;
 
-            throw new Error(`Could not find entry with name ${name}, "extracted filename was ${name}`);
+            throw new Error(`Missing entry with name ${name}`);
         };
     }
 
@@ -76,14 +76,8 @@ export class Reader extends ZipReader<Blob> implements ReaderLike {
 
     partialSearch(name: string) {
         //Remove leading '/' for paths
-        const fn = decodeURI(name[0] == '/' ? name.slice(1) : name).toLowerCase();
-        return this.prepareGet(fn)(n => {
-            if (n.directory) {
-                return false;
-            }
-            const nf = n.filename.toLowerCase();
-            return nf.includes(fn) || fn.includes(nf);
-        });
+        const safe_name = decodeURI(name[0] == '/' ? name.slice(1) : name);
+        return this.prepareGet(safe_name)(n => n.filename.includes(safe_name));
     }
 
     /**

@@ -14,7 +14,7 @@ export function parseMetadata(rawMetadata: Thing): Metadata {
     Object.entries(rawMetadata).forEach(([k, v]: [k: string, v: Thing]) => {
         const
             keyparts = k.split(":"),
-            key = (keyparts[keyparts.length - 1] || "").toLowerCase().trim()
+            key = (keyparts[keyparts.length - 1] || "").trim()
             ;
         if (!Object.hasOwn(v, "_text")) {
             md[key] = v;

@@ -15,7 +15,7 @@ export interface Parts {
  * Keys here correspond to {@link Parts}
  */
 export interface ProgressEvents extends
-    Partial<Record<EV, any>> { 
+    Partial<Record<EV, CallableFunction>> { 
     root?:(root_path:string)=>void,
     manifest?:(m:trait.Manifest)=>void,
     metadata?:(m:trait.Metadata)=>void,
