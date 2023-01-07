@@ -1,7 +1,7 @@
 lockfileVersion: 5.4
 
 specifiers:
-  '@jcsj/arraymap': ^0.0.3
+  '@jcsj/arraymap': ^0.0.4
   '@jcsj/xml-js': link:E:/Code/Web Dev/xmljs
   '@jest/types': ^29.3.1
   '@types/jest': ^29.2.5
@@ -18,7 +18,7 @@ specifiers:
   vite: ^4.0.4
 
 dependencies:
-  '@jcsj/arraymap': 0.0.3
+  '@jcsj/arraymap': 0.0.4
   '@jcsj/xml-js': link:E:/Code/Web Dev/xmljs
   '@zip.js/zip.js': 2.6.61
 
@@ -636,8 +636,8 @@ packages:
     engines: {node: '>=8'}
     dev: true
 
-  /@jcsj/arraymap/0.0.3:
-    resolution: {integrity: sha512-vy8WChoDQqDnqwAjxYR6bZiCmNS6T75uFF0yP6hGmntcyhe6jQaXjENEnnXGhztVEkrOrI6WwmDU5wIazPLqrQ==}
+  /@jcsj/arraymap/0.0.4:
+    resolution: {integrity: sha512-5u/lFBuvi+rBFpGV3Ys/px8DYULqAy3RQZnp7/R79reovLSQuRn0YjRoQkFtC4hcmznT9PRXpgtTKURKVMa/qA==}
     dev: false
 
   /@jest/console/29.3.1:
