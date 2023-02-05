@@ -35,7 +35,8 @@ export function asMemoized<EP extends Epub>(base:EP) {
  */
 export function prepareMemo<HasEpubArgs extends EpubArgs,EpubLike extends Epub>(implementation:(a:HasEpubArgs)=>Promise<EpubLike>) {
     return async(a:HasEpubArgs) => {
-        const book = await implementation(a);
-        return asMemoized(book);
+        return asMemoized(
+            await implementation(a)
+        );
     }
 }

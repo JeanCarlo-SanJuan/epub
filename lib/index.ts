@@ -165,8 +165,8 @@ export function Retriever<R extends ReaderLike>({ parts, parser }: RetrieverArgs
             const item = this.searchManifestOrPanic(id)
             MIMEError.unless({ id, actual: item["media-type"].trim(), expected: /^image\//i })
 
-            const entry = (await parser.reader.read(item.href, item["media-type"]))
-            return URL.createObjectURL(entry.data as Blob);
+            const {data} = (await parser.reader.read(item.href, item["media-type"]))
+            return URL.createObjectURL(data as Blob);
         },
     };
 }
