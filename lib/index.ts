@@ -12,6 +12,8 @@ import { parseTOC } from "./toc/parseTOC";
 import { INFO, read, Reader, ReaderLike } from "./Reader";
 import { TableOfContents } from "./toc/TableOfContents";
 import { UnknownItemError } from "./error/UnkownItemError";
+export {MemoizedEpubAndSanitized, MemoizedEpub, } from "./Cached";
+export {SanitizedEpub} from "./sanitize";
 
 export interface EpubZipParser extends Parser<Reader> {
     container: ElementCompact,
@@ -105,6 +107,7 @@ export async function open({ blob, events, rootFileParser=parseRootFile,createPa
         parser
     }
 }
+export default epub;
 
 export interface RetrieverArgs<R extends ReaderLike> {
     parts: Parts;

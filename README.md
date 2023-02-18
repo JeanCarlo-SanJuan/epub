@@ -3,31 +3,72 @@
 **NB!** Only ebooks in UTF-8 are currently supported!.
 
 ## Usage 
+* Ready an instance of [File](https://developer.mozilla.org/en-US/docs/Web/API/File) or `Blob` containing the epub data then pass it to the following `epub` function or its variants.
+```ts
+import epub from '@jcsj/epub'
+// Inside an async block 
+async function load() {
+  const epub = await epub(file);
+  //...
+}
 
-```js
-import Epub from '@jcsj/epub'
-const epub = new Epub(file)
-```
-Where
-  * **file** is an instance of the File class of an EPUB file.
+//Or with a promise
+epub(file).then(epub => {
+  //...
+})
 
-Before the contents of the ebook can be read, it must be opened (`Epub` is an `EventEmitter`).
-
-As of 1.9, Epub no longer extends event emitter. Instead pass the events map to .open.
-```js
-import {EV} from "@jcsj/epub"
-
-epub.open({
-  async loaded() {
-    const text = await epub.getContent('chapter_id')
+//Use the 2nd arg to handle parser progress events
+epub(file, {
+  metadata(metadata) {
+    console.log("Meta:", metadata);
+    //Set the tab's title with the book's title.
+    document.title = metadata.title;
   },
-  //Or
-  meatadata: () => {
-    console.log(epub.metadata.title)
+  manifest(manifest) {
+      console.log("Manifest: ", manifest);
+  },
+  spine(spine) {
+    console.log("Spine:", spine);
+  },
+  flow(flow) {
+    console.log("Flow: ", flow);
+  },
+  toc(toc) {
+    console.log("TOC: ", toc);
   }
+  //Can also use async functions
+  async root() {
+    console.log("Root found!")
+  },
 })
 ```
 
+
+## V2 Major Change
+* Julien's version included mandatory sanitization checks. While I added memoization in my version for my use case. Since V2 is now implemented in a functional way, those features has been moved to other functions for extensibility
+1. MemoizedEpub - Caches succeeding [`getContent`](#async-getcontentchapter_id), and [`getImage`](#async-getimageimage_id) calls.
+2. SanitizedEpub - Applies the ff:
+  1. Removes inline js events
+  2. Matches anchor tag srcs with the [flow](#flow)
+  3. Matches media tag srcs with the [manifest](#manifest).
+  4. If provided with the optional chapter transformer callback, the parsed data from #3 is passed to it.
+3. MemoizedAndSanitizedEpub - Combines both MemoizedEpub and the SanitizedEpub features
+
+* The raw data, as with the default behavior with [`epub`](#usage), 
+  can still be retrieved by using the [`getContentRaw`](#async-getcontentrawchapter_id) method.
+```js
+import { MemoizedEpub, SanitizedEpub, MemoizedEpubAndSanitized } from "@jcsj/epub"
+
+//Same usage as `epub`
+MemoizedEpub(file,{
+  metadata(metadata) {
+    //...
+  }
+}).then(memoizedEpub => {
+  //...
+}) 
+
+```
 ## Item
 An object/interface that contains basic file info from the archive. It is the most important structure as the manifest, flow, toc uses or extends it.
 It has the following propperties:
@@ -61,7 +102,7 @@ Available fields:
 
 ## flow
 
-An instance of Flow class which is a Map whose values implement `Item`. It is basically a slice of **manifest**. The values hold the actual list of chapters (TOC is just an indication and can link to a # url inside a chapter file).
+An instance of Flow class which is a Map whose values implement [Item](#item). It's a slice of [manifest](#manifest). The values hold the actual list of chapters (TOC is just an indication and can link to a # url inside a chapter file).
 
 ```js
 epub.flow.forEach([key, value] => {
@@ -73,7 +114,7 @@ epub.flow.forEach([key, value] => {
 Chapter `id` is needed to load the chapters with `getContent`
 
 ## toc
-It is an instance of **TableOfContents** that extends **Map** whose values implement **Chapter** . It is basically a slice of **Flow**. It indicates a list of titles/urls for the TOC. Actual chapter(the file) is accessed with the `href` property.
+It is an instance of **TableOfContents** that extends **Map** whose values implement [Chapter](#chapter) . It is basically a slice of [Flow](#flow). It indicates a list of titles/urls for the TOC. Actual chapter(the file) is accessed with the `href` property.
 
 ## Chapter
 An extension of **Item** with the following additional properties:
@@ -128,13 +169,18 @@ For *TS*: It implements the zip.Entry interface.
 let tocEntry = await epub.getFileInArchive("toc")
 ```
 
+## Composability
+* Create your custom implemention of epub by calling [epub](#usage) then overwriting and adding methods/properties to resulting epub interface. For examples, see the implementation of [MemoizedEpub](#v2-major-change) and its variants.
+* For more fine grained control or writing your own parser, the functions used in [epub](./lib/index.ts) most internally used functions are exported.
 # Changes against [Julien-c's epub](https://github.com/julien-c/epub)
 
 ## Dependencies:
 1. adm-zip | zipfile -> @zip.js/zip.js
-2. xml2js -> xml-js
+2. xml2js -> xml-js -> @jcsj/xml-js (as of V2)
+
 
 ## Implementation:
 1. Async-await based.
 1. Uses built-in `DOM` parsers instead of `regex` for getting content.
 1. **Flow** and **TOC** are instances of *Map* instead of being just an *Object*.
+1. Use functions and TS interfaces instead of a class
