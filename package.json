@@ -21,21 +21,21 @@
   "dependencies": {
     "@jcsj/arraymap": "^0.0.4",
     "@jcsj/xml-js": "^2.0.0-beta.2",
-    "@zip.js/zip.js": "^2.6.65"
+    "@zip.js/zip.js": "^2.6.75"
   },
   "devDependencies": {
     "@jest/types": "^29.4.3",
     "@types/jest": "^29.4.0",
     "@types/mocha": "^10.0.1",
-    "@typescript-eslint/eslint-plugin": "^5.52.0",
-    "@typescript-eslint/parser": "^5.52.0",
-    "eslint": "^8.34.0",
+    "@typescript-eslint/eslint-plugin": "^5.54.0",
+    "@typescript-eslint/parser": "^5.54.0",
+    "eslint": "^8.35.0",
     "jest": "^29.4.3",
     "jest-environment-jsdom": "^29.4.3",
     "ts-jest": "^29.0.5",
     "ts-node": "^10.9.1",
     "typescript": "^4.9.5",
-    "vite": "^4.1.2"
+    "vite": "^4.1.4"
   },
   "license": "ISC"
 }
