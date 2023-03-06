@@ -1,8 +1,63 @@
 import toArray from "../toArray";
-import { Manifest } from "../traits";
+import { Attribute, Item, Manifest } from "../traits";
 import * as Nav from "./NavTree";
 import { TableOfContents } from "./TableOfContents";
 
+function walkBranch(
+    ol: Attribute & { li: Attribute },
+    m: Manifest,
+    order = 0,
+    level = 0) {
+    const output: TableOfContents = new TableOfContents();
+
+    // limit depth
+    if (level > 7 || ol === undefined)
+        return output;
+
+    for (const li of toArray(ol.li)) {
+        const a: Item = li.a;
+        const element: Nav.Leaf = {
+            level,
+            order: order++,
+            title: a._text,
+            href: a._attributes.href,
+            id: a._attributes.id,
+            "media-type": ""
+        };
+        // TODO link existing object
+        // element = { ...manifest[element.id], title: element.title, order, level };
+        if (li.ol) {
+            element.navPoint = walkBranch(li.ol, m, order, level++);
+        }
+        output.set(element.id, element)
+    }
+
+    return output;
+}
+/**
+ * For Epub3
+ */
+export function walkNav
+    ({
+        nav,
+        level = 0
+    },
+        manifest: Manifest
+    ) {
+
+    if (nav.ol) {
+        return walkBranch(nav.ol, manifest, 0, level)
+    } else
+        //Some navs may be arrays
+        if (nav.length) {
+            return walkBranch(nav[0].ol, manifest, 0, level)
+        }
+    return new TableOfContents();
+}
+
+/**
+ * For Epub2 ncx
+ */
 export function walkNavMap
     ({ branch, path, IDs, level = 0 }: Nav.Node,
         manifest: Manifest
@@ -28,7 +83,7 @@ export function walkNavMap
         } catch (error) {
             //PASS
         }
-        
+
         if (part._attributes.playOrder) {
             const _order = parseInt(part._attributes.playOrder)
             if (isNaN(_order)) {

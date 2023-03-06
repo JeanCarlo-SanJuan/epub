@@ -1,5 +1,5 @@
 import { matchTOCWithManifest } from "./matchTOCWithManifest";
-import { walkNavMap } from "./walkNavMap";
+import { walkNav, walkNavMap } from "./walkNavMap";
 import { walkTOC } from "./walkTOC";
 import { Manifest } from "../traits";
 import { TableOfContents } from "./TableOfContents";
@@ -25,8 +25,14 @@ export async function parseTOC<R extends ReaderLike>(manifest: Manifest, toc_id:
             }
             , manifest
         )
-    } else {
-        toc = walkTOC(xml.html.body, manifest);
+    } else if (xml.html.body) { 
+        if (xml.html.body.p) {
+            toc = walkTOC(xml.html.body, manifest);
+        } else if (xml.html.body.nav) {
+            toc = walkNav(xml.html.body, manifest);
+        } else {
+            toc = new TableOfContents();
+        }
     }
 
     return matchTOCWithManifest(toc, manifest)
