@@ -1,4 +1,4 @@
-import { BlobReader, BlobWriter, Entry, TextWriter, ZipReader } from "@zip.js/zip.js";
+import { BlobWriter, Entry, TextWriter, Uint8ArrayReader, ZipReader } from "@zip.js/zip.js";
 import { MIMEError } from "./error/MIMEError";
 import * as trait from "./traits";
 
@@ -13,15 +13,16 @@ export enum INFO {
 }
 
 export async function read(value:Blob):Promise<Reader>{
-    const r = new Reader(value)
+    const a = await value.arrayBuffer();
+    const r = new Reader(new Uint8Array(a));
     await r.init()
     return r
 }
 
-export class Reader extends ZipReader<Blob> implements ReaderLike {
+export class Reader extends ZipReader<Uint8Array> implements ReaderLike {
     entries: Entry[] = [];
-    constructor(value: Blob) {
-        super(new BlobReader(value));
+    constructor(value: Uint8Array) {
+        super(new Uint8ArrayReader(value));
     }
     container?: trait.LoadedEntry = undefined;
     /**
