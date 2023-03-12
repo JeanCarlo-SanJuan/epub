@@ -41,10 +41,11 @@ export interface Epub extends DataReader, Searcher {
 }
 
 export interface EpubArgs {
-    blob: Blob;
-    events: ProgressEvents;
-    rootFileParser?:typeof parseRootFile;
+    blob: Blob,
+    events: ProgressEvents,
+    rootFileParser?:typeof parseRootFile,
     createParser?:typeof parse,
+    options?:Options.XML2JSON
 }
 
 async function parseRootFile<R extends ReaderLike>(
@@ -95,10 +96,16 @@ async function parseRootFile<R extends ReaderLike>(
 /**
  * Opens an Epub
  */
-export async function open({ blob, events, rootFileParser=parseRootFile,createParser=parse }: EpubArgs) {
+export async function open({ 
+    blob, 
+    events, 
+    rootFileParser=parseRootFile,
+    createParser=parse, 
+    options =undefined 
+}: EpubArgs) {
     const emit = prepareEmit(events);
 
-    const parser = await createParser(blob, undefined);
+    const parser = await createParser(blob, options);
     emit(EV.root, parser.root.xml);
 
     //TODO: Remove coercion

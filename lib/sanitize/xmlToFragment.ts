@@ -8,6 +8,6 @@ export function xmlToFragment(text:string, id:string): DocumentFragment {
     }
     const f = document.createElement("template")
     f.innerHTML = b.innerHTML;
-    removeChildsWith(b, "script, style");
+    removeChildsWith(f, "script, style");
     return f.content;
 }

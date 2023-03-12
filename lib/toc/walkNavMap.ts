@@ -48,7 +48,7 @@ export function walkNav
     if (nav.ol) {
         return walkBranch(nav.ol, manifest, 0, level)
     } else
-        //Some navs may be arrays
+        //Some navs are arrays
         if (nav.length) {
             return walkBranch(nav[0].ol, manifest, 0, level)
         }
@@ -64,19 +64,19 @@ export function walkNavMap
     ) {
     const output: TableOfContents = new TableOfContents();
     // limit depth
-    if (level > 7)
+    if (level > 7 || branch === undefined)
         return output;
 
     let order = 0;
     for (const part of toArray(branch)) {
-        let title = "";
         let href: string = part.content._attributes.src;
-
+        
         if (href)
-            href = path.concat([href.trim()]).join("/");
+        href = path.concat([href.trim()]).join("/");
         else
-            continue;
-
+        continue;
+        
+        let title = "";
         try {
             if (part.navLabel)
                 title = (part.navLabel.text._text || part.navLabel).trim() || ""

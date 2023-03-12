@@ -15,13 +15,14 @@ export async function matchMediaSources<D extends DataReader>(d:D, m:Manifest, f
             src?.endsWith(item.href)
         )
         
-        if (item === undefined) {
-            throw Error(`${src} IS NOT IN MANIFEST`)
+        if (item) {
+            img.setAttribute(key,
+                await d.getImage(item.id)
+            );
+            continue
         }
 
-        img.setAttribute(key,
-            await d.getImage(item.id)
-        );
+        throw Error(`${src} IS NOT IN MANIFEST`)
     }
 }
 

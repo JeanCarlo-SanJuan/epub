@@ -6,8 +6,8 @@ export function matchTOCWithManifest(toc:TableOfContents, manifest:Manifest) {
         if (elem.href.includes(id))
             return;
 
-        let [href] = elem.href
-            //Removes l/r white space and anchor
+        //Removes l/r white space and anchor
+        const [href] = elem.href
             .trim()
             .split("#", 1);
 

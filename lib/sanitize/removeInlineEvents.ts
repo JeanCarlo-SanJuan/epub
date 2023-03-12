@@ -3,7 +3,7 @@ export function removeInlineEventsInFragment(frag: DocumentFragment) {
 }
 
 export function removeInlineEvents(elem:Element) {
-    for (const { name } of Object.values(elem.attributes)) {
+    for (const name of elem.getAttributeNames()) {
         if (name.startsWith("on")) {
             elem.removeAttribute(name);
         }
