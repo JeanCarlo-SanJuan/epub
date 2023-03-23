@@ -44,7 +44,7 @@ export class Reader extends ZipReader<Uint8Array> implements ReaderLike {
     }
     /**
      *  Finds a file named "mimetype" and check if the content
-     *  is exactly `Reader.MIME`.
+     *  is exactly {@link INFO.MIME}.
      **/
     async checkMimeType() {
         const { data } = await this.read(INFO.TARGET);

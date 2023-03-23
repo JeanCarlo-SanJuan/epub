@@ -94,7 +94,7 @@ async function parseRootFile<R extends ReaderLike>(
 }
 
 /**
- * Opens an Epub
+ * Opens an {@link Epub}
  */
 export async function open({ 
     blob, 
@@ -128,7 +128,7 @@ export interface Retriever extends Searcher, DataReader {
 export const ALLOWED_MIMES = /^(application\/xhtml\+xml|image\/svg\+xml|text\/css)$/i;
 
 /**
- * Provides convenience functions for searching entries from the manifest and reading the data from these.
+ * Provides convenience functions for searching entries from the [Manifest](./traits/ManifestItem.ts) and reading the data from these.
  */
 export function Retriever<R extends ReaderLike>({ parts, parser }: RetrieverArgs<R>): Retriever {
     return {

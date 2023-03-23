@@ -7,7 +7,7 @@ export const MemoizedEpub = prepareMemo(epub);
 export const MemoizedEpubAndSanitized = prepareMemo(SanitizedEpub);
 
 /**
- * Replaces the methods in import("./index.ts").DataReader with cacheable ones.
+ * Replaces the methods in [DataReader](index.ts) with cacheable ones.
  */
 export function asMemoized<EP extends Epub>(base:EP) {
     return {
