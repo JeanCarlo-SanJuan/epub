@@ -138,12 +138,16 @@ export function Retriever<R extends ReaderLike>({ parts, parser }: RetrieverArgs
         filter(predicate) {
             return Object.values(parts.manifest).filter(predicate)
         },
+
+        /**
+         * Matches items that satisfy item.href == re
+         */
         matchAll(re: RegExp | string) {
             const cb: (item: trait.Item) => boolean = (typeof re === "string") ?
-                item => item.id.includes(re)
-                : item => re.test(item.id)
+                item => item.href.includes(re)
+                : item => re.test(item.href);
 
-            return this.filter(cb)
+            return this.filter(cb);
         },
 
         searchManifestOrPanic(id: string) {

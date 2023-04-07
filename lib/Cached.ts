@@ -9,10 +9,10 @@ export const MemoizedEpubAndSanitized = prepareMemo(SanitizedEpub);
 /**
  * Replaces the methods in [DataReader](index.ts) with cacheable ones.
  */
-export function asMemoized<EP extends Epub>(base:EP) {
+export function asMemoized<EP extends Epub>(base: EP) {
     return {
         ...base,
-        cache:new BookCache(),
+        cache: new BookCache(),
         async getContent(id: string) {
             return cacheOrMiss(
                 this.cache.text,
@@ -33,10 +33,9 @@ export function asMemoized<EP extends Epub>(base:EP) {
 /**
  * Composes a function that returns an `Epub` with {@link asMemoized}
  */
-export function prepareMemo<HasEpubArgs extends EpubArgs,EpubLike extends Epub>(implementation:(a:HasEpubArgs)=>Promise<EpubLike>) {
-    return async(a:HasEpubArgs) => {
-        return asMemoized(
+export function prepareMemo<HasEpubArgs extends EpubArgs, EpubLike extends Epub>(implementation: (a: HasEpubArgs) => Promise<EpubLike>) {
+    return async (a: HasEpubArgs) =>
+        asMemoized(
             await implementation(a)
         );
-    }
 }
