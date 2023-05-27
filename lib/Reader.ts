@@ -1,7 +1,6 @@
 import { BlobWriter, Entry, TextWriter, Uint8ArrayReader, ZipReader } from "@zip.js/zip.js";
 import { MIMEError } from "./error/MIMEError";
-import * as trait from "./traits";
-
+import { LoadedEntry } from "./traits";
 /**
  * Contains strings that must be matched as the Epub is parsed.
  */
@@ -12,19 +11,27 @@ export enum INFO {
     OEBPS_ID = "application/oebps-package+xml",
 }
 
+export interface ReaderLike {
+    read(name: string, type?: string): Promise<LoadedEntry>
+}
+
+/**
+ * Creates an instance of {@link Reader} then runs {@link Reader.init()} asynchronously.
+ *
+ */
 export async function read(value:Blob):Promise<Reader>{
     const a = await value.arrayBuffer();
     const r = new Reader(new Uint8Array(a));
-    await r.init()
-    return r
+    await r.init();
+    return r;
 }
 
 export class Reader extends ZipReader<Uint8Array> implements ReaderLike {
     entries: Entry[] = [];
+    container?: LoadedEntry;
     constructor(value: Uint8Array) {
         super(new Uint8ArrayReader(value));
     }
-    container?: trait.LoadedEntry = undefined;
     /**
      * Extracts the epub files from a zip archive, retrieves file listing, and check mime type.
      */
@@ -32,14 +39,7 @@ export class Reader extends ZipReader<Uint8Array> implements ReaderLike {
         this.entries = await this.getEntries();
         // close the ZipReader
         await this.close();
-
-        if (this.entries.length) {
-            await this.checkMimeType();
-        }
-        else {
-            throw new Error("Empty archive!");
-        }
-
+        await this.checkMimeType();
         this.container = await this.read(INFO.CONTAINER_ID);
     }
     /**
@@ -51,19 +51,18 @@ export class Reader extends ZipReader<Uint8Array> implements ReaderLike {
         MIMEError.unless({ id: INFO.TARGET, actual: data as string, expected: INFO.MIME});
     }
 
-    async read(name: string, type?: string): Promise<trait.LoadedEntry> {
+    async read(name: string, type?: string): Promise<LoadedEntry> {
         const file = this.partialSearch(name);
-        (file as trait.LoadedEntry).data = await file.getData(
+        (file as LoadedEntry).data = await file.getData(
             this.determineWriter(type),
             {});
 
-        return file as trait.LoadedEntry;
+        return file as LoadedEntry;
     }
 
     prepareGet(name: string) {
         return (predicate: (n: Entry) => boolean) => {
             const entry = this.entries.find(predicate);
-
             if (entry)
                 return entry;
 
@@ -80,20 +79,15 @@ export class Reader extends ZipReader<Uint8Array> implements ReaderLike {
         const safe_name = decodeURI(name[0] == '/' ? name.slice(1) : name);
         return this.prepareGet(safe_name)(n => n.filename.includes(safe_name));
     }
-
+   
     /**
      * @returns the appropriate zip writer
      */
     determineWriter(t?: string) {
         if (t?.includes("image/"))
             return new BlobWriter(t);
-
         else
             return new TextWriter("utf-8");
     }
 }
 
-
-export interface ReaderLike {
-    read(name: string, type?: string): Promise<trait.LoadedEntry>
-}

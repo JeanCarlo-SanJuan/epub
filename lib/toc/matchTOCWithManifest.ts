@@ -11,7 +11,6 @@ export function matchTOCWithManifest(toc:TableOfContents, manifest:Manifest) {
             .trim()
             .split("#", 1);
 
-        //TODO: Optimize
         for (const key in manifest) {
             if (href == manifest[key].href) {
                 elem.id = key;

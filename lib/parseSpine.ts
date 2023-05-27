@@ -1,21 +1,9 @@
 import toArray from "./toArray";
 import { RawSpine, Thing, Spine } from "./traits";
 export function parseSpine({ itemref, _attributes }: RawSpine, rawManifest: Thing): Spine {
-    const s: Spine = {
+    return {
         toc: "ncx",
-        contents: [],
-        ..._attributes, //Override the default props
+        contents: itemref ? toArray(itemref).map(({ _attributes: atrs }) => rawManifest[atrs.idref]):[],
+        ..._attributes,
     }
-    if (itemref) {
-        itemref = toArray(itemref)
-        s.contents = itemref.map(({ _attributes: atrs }, index) => {
-            const l = rawManifest[atrs.idref];
-
-            if (!Object.hasOwn(l, "id")) {
-                throw TypeError(`Missing id at index ${index} | item, ${l}`,)
-            }
-            return l
-        })
-    }
-    return s;
 }

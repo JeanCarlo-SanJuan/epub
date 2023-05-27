@@ -14,10 +14,7 @@ export function walkSpine(spine:Spine): TableOfContents {
             ...item, 
         };
 
-        if (element.id == undefined)
-            continue;
-
-        toc.set(item.id, element)
+        toc.set(element.id, element)
     }
 
     return toc;
