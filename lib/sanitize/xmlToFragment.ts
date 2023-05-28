@@ -1,4 +1,5 @@
 import removeChildsWith from "./removeChildsWithSelector"
+
 export function xmlToFragment(text:string, id:string): DocumentFragment {
     const p = new DOMParser()
     const xmlD = p.parseFromString(text, "application/xhtml+xml");

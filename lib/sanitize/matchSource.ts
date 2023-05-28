@@ -2,6 +2,7 @@ import { DataReader } from "..";
 import { Manifest } from "../traits";
 
 export async function matchMediaSources<D extends DataReader>(d:D, m:Manifest, frag: DocumentFragment) {
+    const manifest = Object.values(m);
     for (const img of Array.from(frag.querySelectorAll<HTMLImageElement | SVGImageElement>("img, image"))) {
         //TODO: Allow a default image to be used when no src.
         const { key, src } = getSource(img);
@@ -11,8 +12,8 @@ export async function matchMediaSources<D extends DataReader>(d:D, m:Manifest, f
         
         img.dataset.src = src;
 
-        const item = Object.values(m).find(item =>
-            src?.endsWith(item.href)
+        const item = manifest.find(({href}) =>
+            src.endsWith(href)
         )
         
         if (item) {
@@ -30,7 +31,7 @@ export async function matchMediaSources<D extends DataReader>(d:D, m:Manifest, f
  * Gets source attribute of picture elements
  */
 export function getSource(img: HTMLImageElement | SVGImageElement) {
-    const key = ["src", "href", "xlink:href"].find(a => img.hasAttribute(a));
+    const key = ["src", "href", "xlink:href"].find(img.hasAttribute, img);
     return {
         key,
         src: key ? img.getAttribute(key) ?? undefined : undefined

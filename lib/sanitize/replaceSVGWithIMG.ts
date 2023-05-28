@@ -6,8 +6,6 @@ export function replaceSVGImageWithIMG(frag:DocumentFragment) {
             return
 
         const img = new Image();
-
-        //TS: null vs undefined
         img.dataset.src = image.getAttribute("xlink:href") || undefined;
         svg.parentNode?.replaceChild(img, svg)
     })
