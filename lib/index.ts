@@ -26,16 +26,16 @@ export interface DataReader {
     getContent(id: string): Promise<string>;
     getImage(id: string): Promise<string>;
 }
-export interface Searcher {
+export interface Searcher<T> {
     filter(predicate: (
-        value: trait.Item,
+        value: T,
         index: number, array:
-            trait.Item[]) => boolean
-    ): trait.Item[];
-    matchAll(re: RegExp | string): trait.Item[];
-    searchManifestOrPanic(id: string): trait.Item;
+            T[]) => boolean
+    ): T[];
+    matchAll(re: RegExp | string): T[];
+    searchManifestOrPanic(id: string): T;
 }
-export interface Epub extends DataReader, Searcher {
+export interface Epub extends DataReader, Searcher<trait.Item> {
     parts: Parts;
     parser: EpubZipParser;
 }
@@ -49,12 +49,12 @@ export interface EpubArgs {
 }
 
 async function parseRootFile<R extends ReaderLike>(
-    { package: pkg }: { package: trait.RootFile }, 
+    pkg: trait.RootFile, 
     { 
         emit, 
         parser 
     }: { 
-        emit: ReturnType<typeof prepareEmit>, 
+        emit: ReturnType<typeof prepareEmit<EV>>, 
         parser: Parser<R> }
     ): Promise<Parts> {
 
@@ -103,14 +103,12 @@ export async function open({
     createParser=parse, 
     options =undefined 
 }: EpubArgs) {
-    const emit = prepareEmit(events);
-
+    const emit = prepareEmit<EV>(events);
     const parser = await createParser(blob, options);
-    emit(EV.root, parser.root.xml);
+    emit(EV.root, );
 
-    //TODO: Remove coercion
     return {
-        parts: await rootFileParser(parser.root.xml as any, { emit, parser }),
+        parts: await rootFileParser(parser.root.xml.package, { emit, parser }),
         parser
     }
 }
@@ -121,7 +119,7 @@ export interface RetrieverArgs<R extends ReaderLike> {
     parser: Parser<R>;
 }
 
-export interface Retriever extends Searcher, DataReader {
+export interface Retriever extends Searcher<trait.Item>, DataReader {
 
 }
 
@@ -194,8 +192,10 @@ export async function epub(a: EpubArgs): Promise<Epub> {
     };
 }
 
-export function prepareEmit<T extends object>(listeners: T) {
-    return (ev: EV, ...args: any[]) => listeners[ev]?.(...args)
+export function prepareEmit<Keys extends string | number | symbol>(listeners: Partial<Record<Keys, CallableFunction>>) {
+    return (ev: Keys, ...args: any[]) => {
+        listeners[ev]?.(...args);
+    };
 }
 
 /**
@@ -222,8 +222,8 @@ export async function parse(b: Blob, o: Options.XML2JSON = {
     }
 
     p.container = await parseContainer(p);
-    p.root.path = getRootPath(p.container);
-    p.root.xml = await handleRootfile(p.reader, p.xml2js, p.root.path)
+    p.root.path = p.reader.stripOEBPSPrefix(getRootPath(p.container));
+    p.root.xml = await handleRootfile(p.reader, p.xml2js, p.root.path);
 
     return p;
 }

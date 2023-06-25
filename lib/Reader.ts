@@ -19,28 +19,43 @@ export interface ReaderLike {
  * Creates an instance of {@link Reader} then runs {@link Reader.init()} asynchronously.
  *
  */
-export async function read(value:Blob):Promise<Reader>{
+export async function read(value: Blob): Promise<Reader> {
     const a = await value.arrayBuffer();
     const r = new Reader(new Uint8Array(a));
     await r.init();
     return r;
 }
 
+export type URISafeString = string;
 export class Reader extends ZipReader<Uint8Array> implements ReaderLike {
-    entries: Entry[] = [];
+    entries: Map<URISafeString, Entry>;
     container?: LoadedEntry;
+
+    /**
+     * Since non-root Entries are located under `OEBPS/`, 
+     * stripping that would speedup searching in {@link Reader.entries}
+     */
+    readonly OEBPS_PREFIX: RegExp = /^OEBPS\//;
     constructor(value: Uint8Array) {
         super(new Uint8ArrayReader(value));
+        this.entries = new Map();
     }
     /**
      * Extracts the epub files from a zip archive, retrieves file listing, and check mime type.
      */
     async init() {
-        this.entries = await this.getEntries();
+        const entries = await this.getEntries();
+        for (const entry of entries) {
+            this.entries.set(this.stripOEBPSPrefix(entry.filename), entry);
+        }
         // close the ZipReader
         await this.close();
         await this.checkMimeType();
         this.container = await this.read(INFO.CONTAINER_ID);
+    }
+
+    stripOEBPSPrefix(name: string) {
+        return name.replace(this.OEBPS_PREFIX, '');
     }
     /**
      *  Finds a file named "mimetype" and check if the content
@@ -48,38 +63,24 @@ export class Reader extends ZipReader<Uint8Array> implements ReaderLike {
      **/
     async checkMimeType() {
         const { data } = await this.read(INFO.TARGET);
-        MIMEError.unless({ id: INFO.TARGET, actual: data as string, expected: INFO.MIME});
+        MIMEError.unless({ id: INFO.TARGET, actual: data as string, expected: INFO.MIME });
     }
 
-    async read(name: string, type?: string): Promise<LoadedEntry> {
-        const file = this.partialSearch(name);
-        (file as LoadedEntry).data = await file.getData(
-            this.determineWriter(type),
-            {});
+    async read(key: string, type?: string): Promise<LoadedEntry> {
+        const file = this.entries.get(key);
+        if (file) {
+            (file as LoadedEntry).data = await file.getData(
+                this.determineWriter(type),
+                {});
+        }
 
         return file as LoadedEntry;
     }
 
-    prepareGet(name: string) {
-        return (predicate: (n: Entry) => boolean) => {
-            const entry = this.entries.find(predicate);
-            if (entry)
-                return entry;
-
-            throw new Error(`Missing entry with name ${name}`);
-        };
+    get(key: string) {
+        this.entries.get(key);
     }
 
-    get(name: string) {
-        return this.prepareGet(name)(n => n.filename === name);
-    }
-
-    partialSearch(name: string) {
-        //Remove leading '/' for paths
-        const safe_name = decodeURI(name[0] == '/' ? name.slice(1) : name);
-        return this.prepareGet(safe_name)(n => n.filename.includes(safe_name));
-    }
-   
     /**
      * @returns the appropriate zip writer
      */
