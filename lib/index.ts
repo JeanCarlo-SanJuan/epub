@@ -12,9 +12,9 @@ import { parseTOC } from "./toc/parseTOC";
 import { INFO, read, Reader, ReaderLike } from "./Reader";
 import { TableOfContents } from "./toc/TableOfContents";
 import { UnknownItemError } from "./error/UnkownItemError";
+import makeEmit from "@jcsj/emit";
 export {MemoizedEpubAndSanitized, MemoizedEpub, } from "./Cached";
 export {SanitizedEpub} from "./sanitize";
-
 export interface EpubZipParser extends Parser<Reader> {
     container: ElementCompact,
     root: {
@@ -54,7 +54,7 @@ async function parseRootFile<R extends ReaderLike>(
         emit, 
         parser 
     }: { 
-        emit: ReturnType<typeof prepareEmit<EV>>, 
+        emit: ReturnType<typeof makeEmit<ProgressEvents>>, 
         parser: Parser<R> }
     ): Promise<Parts> {
 
@@ -103,9 +103,9 @@ export async function open({
     createParser=parse, 
     options =undefined 
 }: EpubArgs) {
-    const emit = prepareEmit<EV>(events);
+    const emit = makeEmit(events);
     const parser = await createParser(blob, options);
-    emit(EV.root, );
+    emit(EV.root, parser.root.path);
 
     return {
         parts: await rootFileParser(parser.root.xml.package, { emit, parser }),
@@ -189,12 +189,6 @@ export async function epub(a: EpubArgs): Promise<Epub> {
     return {
         ...base,
         ...Retriever(base)
-    };
-}
-
-export function prepareEmit<Keys extends string | number | symbol>(listeners: Partial<Record<Keys, CallableFunction>>) {
-    return (ev: Keys, ...args: any[]) => {
-        listeners[ev]?.(...args);
     };
 }
 

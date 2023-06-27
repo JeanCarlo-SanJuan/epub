@@ -8,6 +8,9 @@ dependencies:
   '@jcsj/arraymap':
     specifier: ^0.0.4
     version: 0.0.4
+  '@jcsj/emit':
+    specifier: ^0.1.1
+    version: 0.1.1
   '@jcsj/xml-js':
     specifier: 2.0.0-beta.2
     version: 2.0.0-beta.2
@@ -676,6 +679,10 @@ packages:
 
   /@jcsj/arraymap@0.0.4:
     resolution: {integrity: sha512-5u/lFBuvi+rBFpGV3Ys/px8DYULqAy3RQZnp7/R79reovLSQuRn0YjRoQkFtC4hcmznT9PRXpgtTKURKVMa/qA==}
+    dev: false
+
+  /@jcsj/emit@0.1.1:
+    resolution: {integrity: sha512-rrQe3nHlsejjuY4YDl6rh8TVZplNaNb6wi5XhwsCLAA9+7gwGTVPrwZ6RhxItzKc6cLesvydzHkxf9EVtXyVqw==}
     dev: false
 
   /@jcsj/sax@2.0.0-beta.1:

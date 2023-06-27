@@ -18,7 +18,7 @@ export interface ProgressEvents extends
     Partial<Record<EV, CallableFunction>> { 
     root?:(root_path:string)=>void,
     manifest?:(m:trait.Manifest)=>void,
-    metadata?:(m:trait.Metadata)=>void,
+    metadata?:(m:Partial<trait.Metadata>)=>void,
     spine?:(s:trait.Spine)=>void,
     flow?:(f:trait.Flow)=>void,
     toc?:(t:TableOfContents)=>void,
