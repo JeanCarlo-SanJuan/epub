@@ -13,10 +13,11 @@ export enum INFO {
 
 export interface ReaderLike {
     read(name: string, type?: string): Promise<LoadedEntry>
+    init():Promise<void>
 }
 
 /**
- * Creates an instance of {@link Reader} then runs {@link Reader.init()} asynchronously.
+ * Creates an instance of {@link Reader} then awaits {@link Reader.init}.
  *
  */
 export async function read(value: Blob): Promise<Reader> {
@@ -26,9 +27,8 @@ export async function read(value: Blob): Promise<Reader> {
     return r;
 }
 
-export type URISafeString = string;
 export class Reader extends ZipReader<Uint8Array> implements ReaderLike {
-    entries: Map<URISafeString, Entry>;
+    entries: Map<string, Entry>;
     container?: LoadedEntry;
 
     /**
@@ -77,8 +77,11 @@ export class Reader extends ZipReader<Uint8Array> implements ReaderLike {
         return file as LoadedEntry;
     }
 
+    /**
+     * Calls Reader.entries.get
+     */
     get(key: string) {
-        this.entries.get(key);
+        return this.entries.get(key);
     }
 
     /**

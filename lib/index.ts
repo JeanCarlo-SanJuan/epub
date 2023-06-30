@@ -78,7 +78,7 @@ async function parseRootFile<R extends ReaderLike>(
     parts.spine = parseSpine(pkg.spine, parts.manifest);
     emit(EV.spine, parts.spine);
 
-    parts.flow = parseFlow(parts.spine.contents);
+    parts.flow = parseFlow(parts.spine.contents, parts.flow);
     emit(EV.flow, parts.flow);
 
     parts.toc = await parseTOC(parts.manifest, parts.spine.toc, parser);
@@ -185,11 +185,8 @@ export function Retriever<R extends ReaderLike>({ parts, parser }: RetrieverArgs
 
 export async function epub(a: EpubArgs): Promise<Epub> {
     const base = await open(a);
-
-    return {
-        ...base,
-        ...Retriever(base)
-    };
+    Object.assign(base, Retriever(base))
+    return base as Epub;
 }
 
 /**

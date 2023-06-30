@@ -1,5 +1,4 @@
 
-
 **NB!** Only ebooks in UTF-8 are currently supported!.
 
 ## Usage 
@@ -36,26 +35,20 @@ epub(file, {
   toc(toc) {
     console.log("TOC: ", toc);
   }
-  //Can also use async functions
+  //Can also be async
   async root() {
     console.log("Root found!")
   },
 })
 ```
 
-
 ## V2 Major Change
 * Julien's version included mandatory sanitization checks. While I added memoization in my version for my use case. Since V2 is now implemented in a functional way, those features has been moved to other functions for extensibility
-1. MemoizedEpub - Caches succeeding [`getContent`](#async-getcontentchapter_id), and [`getImage`](#async-getimageimage_id) calls.
-2. SanitizedEpub - Applies the ff:
-  1. Removes inline js events
-  2. Matches anchor tag srcs with the [flow](#flow)
-  3. Matches media tag srcs with the [manifest](#manifest).
-  4. If provided with the optional chapter transformer callback, the parsed data from #3 is passed to it.
-3. MemoizedAndSanitizedEpub - Combines both MemoizedEpub and the SanitizedEpub features
+1. [MemoizedEpub](#memoizedepub).
+2. [SanitizedEpub](#sanitizedepub)
+3. [MemoizedAndSanitizedEpub](#memoizedandsanitizedepub) - Combines both MemoizedEpub and the SanitizedEpub features
 
-* The raw data, as with the default behavior with [`epub`](#usage), 
-  can still be retrieved by using the [`getContentRaw`](#async-getcontentrawchapter_id) method.
+* The variants have [`getContentRaw`](#async-getcontentrawchapter_id), to call the original [getcontent](#async-getcontentchapterid)
 ```js
 import { MemoizedEpub, SanitizedEpub, MemoizedEpubAndSanitized } from "@jcsj/epub"
 
@@ -67,8 +60,23 @@ MemoizedEpub(file,{
 }).then(memoizedEpub => {
   //...
 }) 
-
 ```
+
+## DEPRECATED: 
+### async getFileInArchive(id)
+### async readFile(id, writer="text")
+1. **data** - string.
+* the writer determines the data's string representation:
+  1. "text" for chapter data in utf-8.
+  2. "image" for base64 string of an image.
+### Use Reader.read instead
+* These has been simplified into Reader.read, 
+* but was moved out of epub as I found it to be rarely used in that form.
+```ts    
+const toc:LoadedEntry = await epub.parser.reader.read("toc")
+console.log(toc.data)
+```
+
 ## Item
 An object/interface that contains basic file info from the archive. It is the most important structure as the manifest, flow, toc uses or extends it.
 It has the following propperties:
@@ -106,8 +114,7 @@ An instance of Flow class which is a Map whose values implement [Item](#item). I
 
 ```js
 epub.flow.forEach([key, value] => {
-  //Note: key == chapter.id
-    console.log(chapter.id)
+    console.log(key, value)
 })
 ```
 
@@ -121,53 +128,43 @@ An extension of **Item** with the following additional properties:
 1. **order** - int
 2. **title** - string
 
-## async getContent(chapter_id)
+## async getContent(chapterId)
 
-Loads chapter text from the ebook as a promise. It is altered to be web safe. Additionally, the result is cached.
-1. Keeps only the body tag.
-1. Removes scripts, styles, and event handlers
-1. Converts SVG IMG as a normal img tag.
-1. Replaces the original image.src with the embedded base64.
-1. Previous src is saved in dataset.src.
+Loads chapter text from the ebook as a promise.
 
 ```js
 let text = await epub.getContent('chapter1')
 ```
 
-## async getContentRaw(chapter_id)
-
-Load raw chapter text from the ebook.
-
-## async getImage(image_id)
-Load's image as a base64 string from the ebook. This can be used as the src of an HTML img element. Additionally, the result is cached. 
+## async getImage(imageId)
+* Load's image as a base64 string from the ebook. 
+* This can be used as the src of an HTML img element.
+* use MemoizedEpub for caching.
+### Usage
 ```js
 const coverImage = await epub.getImage('cover');
-
-//Example application:
 const imageElement = document.createElement("img")
 imageElement.src = coverImage
 document.body.appendChild(imageElement)
 ```
+## MemoizedEpub
+## async getImage(imageId)
+### async getContent(chapterId)
+### async getContentRaw(chapterId)
+## SanitizedEpub
+### async getContent(chapterId)
+* Load raw chapter text from the ebook. It is altered to be web safe
+1. Keeps only the body tag.
+2. Removes scripts, styles, and event handlers
+3. Converts SVG IMG as a normal img tag.
+4. Replaces the original image.src with the embedded base64.
+5. Previous src is saved in dataset.src.
+### async getContentRaw(chapterId)
 
-## async readFile(id, writer="text")
-Loads a file's content from the ebook as an object with the following properties: 
-1. **file** - zip.Entry
-1. **data** - string.
-* the writer determines the data's string representation:
-  1. "text" for chapter data in utf-8.
-  1. "image" for base64 string of an image.
-```js
-const {file, data} = await epub.readFile("toc")
-console.log(data)
-```
-
-## async getFileInArchive(id)
-Loads a file from the ebook as an object.
-For *TS*: It implements the zip.Entry interface.
-
-```js
-let tocEntry = await epub.getFileInArchive("toc")
-```
+## MemoizedAndSanitizedEpub
+## async getImage(imageId)
+### async getContent(chapterId)
+### async getContentRaw(chapterId)
 
 ## Composability
 * Create your custom implemention of epub by calling [epub](#usage) then overwriting and adding methods/properties to resulting epub interface. For examples, see the implementation of [MemoizedEpub](#v2-major-change) and its variants.
