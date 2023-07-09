@@ -9,7 +9,7 @@ import { parseMetadata } from "./parseMetadata";
 import { parseSpine } from "./parseSpine";
 import { parseFlow } from "./parseFlow";
 import { parseTOC } from "./toc/parseTOC";
-import { INFO, read, Reader, ReaderLike } from "./Reader";
+import { INFO, read, Reader, ReaderLike, stripOEBPSPrefix } from "./Reader";
 import { TableOfContents } from "./toc/TableOfContents";
 import { UnknownItemError } from "./error/UnkownItemError";
 import makeEmit from "@jcsj/emit";
@@ -78,7 +78,7 @@ async function parseRootFile<R extends ReaderLike>(
     parts.spine = parseSpine(pkg.spine, parts.manifest);
     emit(EV.spine, parts.spine);
 
-    parts.flow = parseFlow(parts.spine.contents, parts.flow);
+    parts.flow = parseFlow(parts.spine.contents);
     emit(EV.flow, parts.flow);
 
     parts.toc = await parseTOC(parts.manifest, parts.spine.toc, parser);
@@ -213,7 +213,7 @@ export async function parse(b: Blob, o: Options.XML2JSON = {
     }
 
     p.container = await parseContainer(p);
-    p.root.path = p.reader.stripOEBPSPrefix(getRootPath(p.container));
+    p.root.path = stripOEBPSPrefix(getRootPath(p.container));
     p.root.xml = await handleRootfile(p.reader, p.xml2js, p.root.path);
 
     return p;

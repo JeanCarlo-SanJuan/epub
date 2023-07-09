@@ -4,7 +4,7 @@ import { xmlToFragment } from "./xmlToFragment";
 import { removeInlineEventsInFragment } from "./removeInlineEvents";
 import { matchAnchorsWithFlow } from "./matchAnchorsWithTOC";
 import { matchMediaSources } from "./matchSource";
-export type ChapterTransformer = (d:DocumentFragment)=> string;
+export type ChapterTransformer = (d: DocumentFragment) => string;
 
 export interface SanitizedRetrieverArgs<R extends ReaderLike> extends RetrieverArgs<R> {
     chapterTransformer?: ChapterTransformer
@@ -13,9 +13,9 @@ export interface SanitizedRetrieverArgs<R extends ReaderLike> extends RetrieverA
 /**
  * Adds sanitization with the data from DataReader and makes it usable for the web.
  */
-export async function SanitizedEpub(a: EpubArgs & {chapterTransformer?:ChapterTransformer}): Promise<CleanEpub> {
+export async function SanitizedEpub(a: EpubArgs & { chapterTransformer?: ChapterTransformer }): Promise<CleanEpub> {
     const base = await open(a);
-    const r = SanitizedRetriever({...base, chapterTransformer:a.chapterTransformer});
+    const r = SanitizedRetriever({ ...base, chapterTransformer: a.chapterTransformer });
 
     return {
         ...base,
@@ -28,8 +28,8 @@ export interface CleanEpub extends Epub {
     getContentRaw: (id: string) => Promise<string>;
 }
 
-export function SanitizedRetriever<R extends ReaderLike>({parser, parts, chapterTransformer}: SanitizedRetrieverArgs<R>) {
-    const r = Retriever({parser, parts});
+export function SanitizedRetriever<R extends ReaderLike>({ parser, parts, chapterTransformer }: SanitizedRetrieverArgs<R>) {
+    const r = Retriever({ parser, parts });
     /**
      * @override
      * @implNote removes inline events and matches anchors, links, and srcs with the manifest data. May also provide a chapter transformer for even more customization.
@@ -54,7 +54,7 @@ export function SanitizedRetriever<R extends ReaderLike>({parser, parts, chapter
     return {
         ...r,
         chapterTransformer,
-        getContentRaw:r.getContent,
+        getContentRaw: r.getContent,
         getContent
     }
 }

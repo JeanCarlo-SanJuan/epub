@@ -27,6 +27,13 @@ export async function read(value: Blob): Promise<Reader> {
     return r;
 }
 
+/**
+ * Files are referenced differently in the manifest, in hyperlinks, etc.
+ * So I think it's better to strip the OEBPS prefix for all of those.
+ */
+export function stripOEBPSPrefix(name: string) {
+    return name.replace(Reader.OEBPS_PREFIX, '');
+}
 export class Reader extends ZipReader<Uint8Array> implements ReaderLike {
     entries: Map<string, Entry>;
     container?: LoadedEntry;
@@ -35,7 +42,7 @@ export class Reader extends ZipReader<Uint8Array> implements ReaderLike {
      * Since non-root Entries are located under `OEBPS/`, 
      * stripping that would speedup searching in {@link Reader.entries}
      */
-    readonly OEBPS_PREFIX: RegExp = /^OEBPS\//;
+    static readonly OEBPS_PREFIX: RegExp = /^OEBPS\//;
     constructor(value: Uint8Array) {
         super(new Uint8ArrayReader(value));
         this.entries = new Map();
@@ -46,7 +53,7 @@ export class Reader extends ZipReader<Uint8Array> implements ReaderLike {
     async init() {
         const entries = await this.getEntries();
         for (const entry of entries) {
-            this.entries.set(this.stripOEBPSPrefix(entry.filename), entry);
+            this.entries.set(stripOEBPSPrefix(entry.filename), entry);
         }
         // close the ZipReader
         await this.close();
@@ -54,9 +61,7 @@ export class Reader extends ZipReader<Uint8Array> implements ReaderLike {
         this.container = await this.read(INFO.CONTAINER_ID);
     }
 
-    stripOEBPSPrefix(name: string) {
-        return name.replace(this.OEBPS_PREFIX, '');
-    }
+
     /**
      *  Finds a file named "mimetype" and check if the content
      *  is exactly {@link INFO.MIME}.
@@ -67,7 +72,7 @@ export class Reader extends ZipReader<Uint8Array> implements ReaderLike {
     }
 
     async read(key: string, type?: string): Promise<LoadedEntry> {
-        const file = this.entries.get(key);
+        const file = this.entries.get(key); 
         if (file) {
             (file as LoadedEntry).data = await file.getData(
                 this.determineWriter(type),
