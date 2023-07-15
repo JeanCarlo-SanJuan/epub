@@ -1,21 +1,23 @@
 import { DataReader } from "..";
 import { Manifest } from "../traits";
 
-export async function matchMediaSources<D extends DataReader>(d:D, m:Manifest, frag: DocumentFragment) {
+export type MissingMediaHandler = (data: { img: HTMLImageElement | SVGImageElement, src: string, key: string }) => Promise<string|undefined>
+
+export async function matchMediaSources<D extends DataReader>(d: D, m: Manifest, frag: DocumentFragment, fallback = "", handler?: MissingMediaHandler
+) {
     const manifest = Object.values(m);
     for (const img of Array.from(frag.querySelectorAll<HTMLImageElement | SVGImageElement>("img, image"))) {
-        //TODO: Allow a default image to be used when no src.
         const { key, src } = getSource(img);
         if (src === undefined || key === undefined) {
             throw Error(`${img} HAS NO SOURCE`)
         }
-        
+
         img.dataset.src = src;
 
-        const item = manifest.find(({href}) =>
+        const item = manifest.find(({ href }) =>
             src.endsWith(href)
         )
-        
+
         if (item) {
             img.setAttribute(key,
                 await d.getImage(item.id)
@@ -23,7 +25,7 @@ export async function matchMediaSources<D extends DataReader>(d:D, m:Manifest, f
             continue
         }
 
-        throw Error(`${src} IS NOT IN MANIFEST`)
+        img.setAttribute(key, (await handler?.({ img, src, key })) ?? fallback)
     }
 }
 

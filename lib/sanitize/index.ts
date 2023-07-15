@@ -3,19 +3,24 @@ import { Retriever, open, EpubArgs, Epub, RetrieverArgs } from "..";
 import { xmlToFragment } from "./xmlToFragment";
 import { removeInlineEventsInFragment } from "./removeInlineEvents";
 import { matchAnchorsWithFlow } from "./matchAnchorsWithTOC";
-import { matchMediaSources } from "./matchSource";
+import { MissingMediaHandler, matchMediaSources } from "./matchSource";
 export type ChapterTransformer = (d: DocumentFragment) => string;
 
-export interface SanitizedRetrieverArgs<R extends ReaderLike> extends RetrieverArgs<R> {
+
+
+export interface SanitizedEpubArgs {
     chapterTransformer?: ChapterTransformer
+    missingMediaHandler?: MissingMediaHandler
+    fallbackImage?: string
 }
+export interface SanitizedRetrieverArgs<R extends ReaderLike> extends RetrieverArgs<R>, SanitizedEpubArgs {}
 
 /**
  * Adds sanitization with the data from DataReader and makes it usable for the web.
  */
-export async function SanitizedEpub(a: EpubArgs & { chapterTransformer?: ChapterTransformer }): Promise<CleanEpub> {
+export async function SanitizedEpub(a: EpubArgs & SanitizedEpubArgs): Promise<CleanEpub> {
     const base = await open(a);
-    const r = SanitizedRetriever({ ...base, chapterTransformer: a.chapterTransformer });
+    const r = SanitizedRetriever({ ...base, chapterTransformer: a.chapterTransformer, missingMediaHandler: a.missingMediaHandler, fallbackImage: a.fallbackImage });
 
     return {
         ...base,
@@ -25,10 +30,11 @@ export async function SanitizedEpub(a: EpubArgs & { chapterTransformer?: Chapter
 
 export interface CleanEpub extends Epub {
     chapterTransformer?: ChapterTransformer;
+    getContent: (id: string, imgFallback?: string, missingMediaHandler?: MissingMediaHandler) => Promise<string>;
     getContentRaw: (id: string) => Promise<string>;
 }
 
-export function SanitizedRetriever<R extends ReaderLike>({ parser, parts, chapterTransformer }: SanitizedRetrieverArgs<R>) {
+export function SanitizedRetriever<R extends ReaderLike>({ parser, parts, chapterTransformer, missingMediaHandler, fallbackImage }: SanitizedRetrieverArgs<R>) {
     const r = Retriever({ parser, parts });
     /**
      * @override
@@ -39,7 +45,7 @@ export function SanitizedRetriever<R extends ReaderLike>({ parser, parts, chapte
         const frag = xmlToFragment(str, id);
         removeInlineEventsInFragment(frag);
         matchAnchorsWithFlow(frag, parts.flow);
-        await matchMediaSources(r, parts.manifest, frag);
+        await matchMediaSources(r, parts.manifest, frag, fallbackImage, missingMediaHandler);
         if (chapterTransformer instanceof Function) {
             try {
                 return chapterTransformer(frag);
