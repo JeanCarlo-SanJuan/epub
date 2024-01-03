@@ -34,6 +34,7 @@ export async function read(value: Blob): Promise<Reader> {
 export function stripOEBPSPrefix(name: string) {
     return name.replace(Reader.OEBPS_PREFIX, '');
 }
+
 export class Reader extends ZipReader<Uint8Array> implements ReaderLike {
     entries: Map<string, Entry>;
     container?: LoadedEntry;
@@ -43,6 +44,7 @@ export class Reader extends ZipReader<Uint8Array> implements ReaderLike {
      * stripping that would speedup searching in {@link Reader.entries}
      */
     static readonly OEBPS_PREFIX: RegExp = /^OEBPS\//;
+    // TODO: Handle OPS prefix
     constructor(value: Uint8Array) {
         super(new Uint8ArrayReader(value));
         this.entries = new Map();
@@ -60,7 +62,6 @@ export class Reader extends ZipReader<Uint8Array> implements ReaderLike {
         await this.checkMimeType();
         this.container = await this.read(INFO.CONTAINER_ID);
     }
-
 
     /**
      *  Finds a file named "mimetype" and check if the content
